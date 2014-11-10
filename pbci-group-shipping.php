@@ -3,11 +3,15 @@
  Plugin Name: PBCI Group Shipping
  Plugin URI:
  Description: Group Shipping Options
- Version: 1.0
+ Version: 1.1
  Author: PBCI / Jeffrey Schutzman
  Author URI:
 */
 
+
+if ( is_admin() ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'admin.php' );
+}
 
 
 class pbci_group_shipping {
@@ -32,9 +36,20 @@ class pbci_group_shipping {
 
 		$result = add_filter( 'cart_eligible_for_free_shipping', array( &$this, 'cart_eligible_for_group_shipping' ) , 10, 2 );
 
+		add_action( 'admin_enqueue_scripts', array($this, 'enqueue_js') );
+
 		return true;
 
 	}
+
+	function enqueue_js( ) {
+	    wp_register_script( 'pbci_gs', plugin_dir_url( __FILE__ ) .  'group-shipping-admin.js' );
+	    wp_localize_script( 'pbci_gs', 'myAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
+    	wp_enqueue_script( 'pbci_gs' );
+
+	}
+
+
 
 	function cart_eligible_for_group_shipping( $is_eligible, $wpsc_cart ) {
 
@@ -48,9 +63,9 @@ class pbci_group_shipping {
 				$product_id = $cart_item->product_id;
 				$design_id = bling_get_design_id( $product_id );
 
-				if ( !empty ( $design_id ) ) {
-					$design_themes = wp_get_object_terms ( $design_id, 'bling_design_theme'  );
-					$design_theme_ids = wp_get_object_terms ( $design_id, 'bling_design_theme' ,  array( 'fields'=>'ids') );
+				if ( ! empty ( $design_id ) ) {
+					$design_themes = wp_get_object_terms( $design_id, 'bling_design_theme'  );
+					$design_theme_ids = wp_get_object_terms( $design_id, 'bling_design_theme' ,  array( 'fields' => 'ids' ) );
 					foreach ( $design_themes as $design_theme ) {
 						if ( $design_theme->parent == 0 )
 							continue;
@@ -127,15 +142,14 @@ class pbci_group_shipping {
 	 * @return unknown
 	 */
 	function getForm() {
-		$free_priority_shipping_threshold = get_option( 'free_priority_shipping_threshold', '50.0');
+// 		$free_priority_shipping_threshold = get_option( 'free_priority_shipping_threshold', '50.0');
 
-		ob_start();
-		?>
+// 		ob_start();
+// 		?>
 
 		<?php
 
-		return ob_get_clean();
-
+		return '';
 	}
 
 	/**
@@ -144,11 +158,11 @@ class pbci_group_shipping {
 	 * @return unknown
 	 */
 	function submit_form() {
-		if (  ! isset( $_POST['free_priority_shipping_threshold'] ) )
-			return false;
+// 		if (  ! isset( $_POST['free_priority_shipping_threshold'] ) )
+// 			return false;
 
-		$free_priority_shipping_threshold = $_POST['free_priority_shipping_threshold'];
-		update_option( 'free_priority_shipping_enabled', $free_priority_shipping_enabled );
+// 		$free_priority_shipping_threshold = $_POST['free_priority_shipping_threshold'];
+// 		update_option( 'free_priority_shipping_enabled', $free_priority_shipping_enabled );
 		return true;
 	}
 
@@ -253,9 +267,9 @@ function pbci_group_shipping_post_type() {
 				'new_item' => 'New Group Shipping',
 				'view_item' => 'View Group Shipping',
 				'search_items' => 'Search Group Shipping',
-				'not_found' =>  'No Group Shipping found',
+				'not_found' => 'No Group Shipping found',
 				'not_found_in_trash' => 'No Group Shipping found in Trash',
-				'parent_item_colon' => ''
+				'parent_item_colon' => '',
 		);
 
 		$args = array(
@@ -267,7 +281,7 @@ function pbci_group_shipping_post_type() {
 				'hierarchical' => false,
 				'query_var' => true,
 				'show_in_menu' => true,
-				'show_in_nav_menus'=> true,
+				'show_in_nav_menus' => true,
 				'supports' => array( 'title' ),
 				'taxonomies' => array( 'bling_design_theme' ),
 		);
@@ -279,105 +293,11 @@ function pbci_group_shipping_post_type() {
 add_action( 'wpsc_register_taxonomies_after', 'pbci_group_shipping_post_type', 99 );
 
 
-function pbci_group_shipping_add($wpsc_shipping_modules) {
+function pbci_group_shipping_add( $wpsc_shipping_modules ) {
 	$rates = new pbci_group_shipping();
 	$wpsc_shipping_modules[$rates->getInternalName()] = $rates;
 	return $wpsc_shipping_modules;
 }
 
-add_filter('wpsc_shipping_modules', 'pbci_group_shipping_add');
+add_filter( 'wpsc_shipping_modules', 'pbci_group_shipping_add' );
 
-
-function pbci_group_shipping_admin_init() {
-
-	add_meta_box('pbci_group_shipping_meta_box','This Group Ship Available for Orders Between These Dates','pbci_group_shipping_meta_box','group-shipping','normal','high');
-
-	wp_register_script( 'group-ship-admin', plugins_url('group-shipping-admin.js', __FILE__ ) , array(), false, false );
-	wp_localize_script( 'group-ship-admin', 'myAjax', array( 'ajaxurl' =>  admin_url( 'admin-ajax.php' )));
-	wp_enqueue_script( 'group-ship-admin' );
-
-}
-
-add_action ( 'admin_menu', 'pbci_group_shipping_admin_init' ,11 );
-
-
-function pbci_group_shipping_meta_box( $post ) {
-
-	$id = $post->ID;
-
-
-	////////////////////////////////////////////////////////////////////
-	// get some default times
-	$datetime = new DateTime($post->post_date);
-	$start_date = $datetime->format('Y-m-d');
-	$x = strtotime ( '+7 days' , strtotime ( $start_date ) ) ;
-	$end_date = date( 'Y-m-d', $x );
-	$start_time = '00:00';
-	$end_time = '23:59';
-
-	////////////////////////////////////////////////////////////////////
-	// If there are saved times we can work with them
-	$start_date = $post->post_date;
-
-	$saved_start_date = get_post_meta($id, 'start_date', true );
-	$saved_end_date = get_post_meta($id, 'end_date', true );
-	$cost = get_post_meta($id, 'cost', true );
-
-	if ( !empty( $saved_start_date ) ) {
-		try {
-			$datetime = new DateTime($saved_start_date);
-			$start_date = $datetime->format('Y-m-d');
-			$start_time = $datetime->format('H:i');
-		} catch (Exception $e) {
-			bling_log( 'malformed start date or time');
-		}
-	}
-
-	if ( !empty( $saved_end_date ) ) {
-		try {
-			$datetime = new DateTime($saved_end_date);
-			$end_date = $datetime->format('Y-m-d');
-			$end_time = $datetime->format('H:i');
-		} catch (Exception $e) {
-			bling_log( 'malformed end date or time');
-		}
-	}
-
-	?>
-	<p><label for="startdate">Start Date:</label>
-	<input class="mydatepicker" type="text" id="startdate" name="startdate" value="<?php echo $start_date;?>">
-	<p>
-
-	<p><label for="starttime">Start Time:</label>
-	<input type="text" id="starttime" name="starttime" readonly="readonly" value="<?php echo $start_time;?>">
-	<p>
-
-	<p><label for="enddate">End Date:</label>
-	<input class="mydatepicker" type="text" id="enddate" name="enddate" value="<?php echo $end_date;?>">
-	<p>
-
-	<p><label for="endtime">End Time:</label>
-	<input type="text" id="endtime" name="endtime" readonly="readonly" value="<?php echo $end_time;?>">
-	<p>
-
-	<p><label for="cost">Cost:</label>
-	<input type="text" id="cost" name="cost"  value="<?php echo $cost;?>">
-	<p>
-
-	<input type="hidden" id="groupshipid" name="id" value="<?php echo $id;?>">
-	<?php
-}
-
-
-function pbci_group_shipping_meta_box_save( $id ) {
-
-	if ( get_post_type( $id ) != 'group-shipping' )
-		return;
-
-	update_post_meta( $id, 'start_date', $_POST['startdate'] . ' ' . $_POST['starttime'] );
-	update_post_meta( $id, 'end_date', $_POST['enddate'] . ' ' . $_POST['endtime'] );
-	update_post_meta( $id , 'cost', $_POST['cost'] );
-
-}
-
-add_action( 'save_post', 'pbci_group_shipping_meta_box_save' );
