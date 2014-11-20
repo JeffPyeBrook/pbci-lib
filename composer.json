@@ -1,5 +1,7 @@
 {
   "name": "pyebrook/pbci-lib",
+  "description": "utility functions for themes and plugins",
+  "license": "(GPLv2 and proprietary)",
   "autoload": {
     "psr-0" : {
       "pyebrook\\pbci-lib" : "src"
