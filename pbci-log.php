@@ -36,7 +36,7 @@ if ( ! class_exists( 'PbciLog' ) ) {
 		 *
 		 * @return string The name of a plugin.
 		 */
-		static function pbci_plugin_basedir( $file ) {
+		static function plugin_basedir( $file ) {
 			global $wp_plugin_paths;
 
 			foreach ( $wp_plugin_paths as $dir => $realdir ) {
@@ -45,7 +45,9 @@ if ( ! class_exists( 'PbciLog' ) ) {
 				}
 			}
 
-			$file          = wp_normalize_path( $file );
+			$file = wp_normalize_path( $file );
+			$file = dirname( $file );
+
 			$plugin_dir    = wp_normalize_path( WP_PLUGIN_DIR );
 			$mu_plugin_dir = wp_normalize_path( WPMU_PLUGIN_DIR );
 
@@ -59,20 +61,21 @@ if ( ! class_exists( 'PbciLog' ) ) {
 			return $file;
 		}
 
-		static function pbci_get_calling_file() {
-			$t = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, 2 );
+		static function get_caller_info() {
+			$backtrace_index = 4;
+			$traces = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, $backtrace_index );
+			$backtrace_index--;
 
-			if ( isset( $t[1]['file'] ) ) {
-				$calling_file = isset( $t[1]['file'] );
-			} else {
-				if ( isset( $t[0]['file'] ) ) {
-					$calling_file = isset( $t[1]['file'] );
-				} else {
-					$calling_file = __FILE__;
-				}
+			$logger_info = array();
+			if ( isset( $traces[$backtrace_index] ) ) {
+				$trace = $traces[$backtrace_index];
+				$logger_info['file']     = isset( $trace['file'] ) ?  wp_normalize_path( $trace['file'] ) : '';
+				$logger_info['line']     = isset( $trace['line'] ) ?  $trace['line'] : '';
+				$logger_info['function'] = isset( $trace['function'] ) ?  $trace['function'] : '';
+				$logger_info['class']    = isset( $trace['class'] ) ?  $trace['class'] : '';
 			}
 
-			return $calling_file;
+			return $logger_info;
 		}
 
 		/**
@@ -86,7 +89,7 @@ if ( ! class_exists( 'PbciLog' ) ) {
 
 			$do_the_log = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'PBCI_DEBUG' ) && PBCI_DEBUG );
 
-			$log_file_path = trailingslashit( pbci_plugin_basedir( $file ) ) . 'testing.log';
+			$log_file_path = trailingslashit( self::plugin_basedir( $file ) ) . 'testing.log';
 
 			if ( ! $do_the_log ) {
 				// if logging is turned off, and there is an old log file, make it go away
@@ -96,12 +99,18 @@ if ( ! class_exists( 'PbciLog' ) ) {
 			} else {
 				$log_file_path = apply_filters( 'pbci_log', $log_file_path );
 
-				$slug = strtolower( plugin_basename( $file ) );
 
 				$text = html_entity_decode( $text );
-				$msg  = $slug . ':';
 
-				$file = str_replace( dirname( __FILE__ ), '', $file );
+				$caller_info = self::get_caller_info();
+				extract( $caller_info );
+
+				$base = self::plugin_basedir( $file );
+				$file = str_replace( $base, '', $file );
+
+				$slug = str_pad( strtolower( basename( $base ) ) . ':', 16, ' ' ) ;
+
+				$msg  = $slug;
 
 				if ( ! empty ( $text ) ) {
 					if ( ! empty( $msg ) ) {
@@ -130,7 +139,11 @@ if ( ! class_exists( 'PbciLog' ) ) {
 
 				if ( ! empty ( $function ) ) {
 					if ( ! empty( $msg ) ) {
-						$msg .= ' ';
+						if ( ! empty ( $class ) ) {
+							$msg .= '::';
+						} else {
+							$msg .= ' ';
+						}
 					}
 
 					$msg .= $function;
@@ -151,5 +164,5 @@ if ( ! class_exists( 'PbciLog' ) ) {
 }
 
 function pbci_log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
-	PbciLog::log( $text, $line, $file, $function, $class );
+	PbciLog::log( $text );
 }
