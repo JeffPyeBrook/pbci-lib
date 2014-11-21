@@ -63,16 +63,16 @@ if ( ! class_exists( 'PbciLog' ) ) {
 
 		static function get_caller_info() {
 			$backtrace_index = 4;
-			$traces = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, $backtrace_index );
-			$backtrace_index--;
+			$traces          = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, $backtrace_index );
+			$backtrace_index --;
 
 			$logger_info = array();
-			if ( isset( $traces[$backtrace_index] ) ) {
-				$trace = $traces[$backtrace_index];
-				$logger_info['file']     = isset( $trace['file'] ) ?  wp_normalize_path( $trace['file'] ) : '';
-				$logger_info['line']     = isset( $trace['line'] ) ?  $trace['line'] : '';
-				$logger_info['function'] = isset( $trace['function'] ) ?  $trace['function'] : '';
-				$logger_info['class']    = isset( $trace['class'] ) ?  $trace['class'] : '';
+			if ( isset( $traces[ $backtrace_index ] ) ) {
+				$trace                   = $traces[ $backtrace_index ];
+				$logger_info['file']     = isset( $trace['file'] ) ? wp_normalize_path( $trace['file'] ) : '';
+				$logger_info['line']     = isset( $trace['line'] ) ? $trace['line'] : '';
+				$logger_info['function'] = isset( $trace['function'] ) ? $trace['function'] : '';
+				$logger_info['class']    = isset( $trace['class'] ) ? $trace['class'] : '';
 			}
 
 			return $logger_info;
@@ -108,9 +108,9 @@ if ( ! class_exists( 'PbciLog' ) ) {
 				$base = self::plugin_basedir( $file );
 				$file = str_replace( $base, '', $file );
 
-				$slug = str_pad( strtolower( basename( $base ) ) . ':', 16, ' ' ) ;
+				$slug = str_pad( strtolower( basename( $base ) ) . ':', 16, ' ' );
 
-				$msg  = $slug;
+				$msg = $slug;
 
 				if ( ! empty ( $text ) ) {
 					if ( ! empty( $msg ) ) {
@@ -161,8 +161,8 @@ if ( ! class_exists( 'PbciLog' ) ) {
 			}
 		}
 	}
-}
 
-function pbci_log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
-	PbciLog::log( $text );
+	function pbci_log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
+		PbciLog::log( $text );
+	}
 }
