@@ -1,0 +1,7 @@
+{
+  "name": "Jeffrey/pbcilib",
+  "description": "utility functions for themes and plugins",
+  "license": "(GPLv2 and proprietary)",
+  "library": "library",
+  "version": "1.0.0"
+}
