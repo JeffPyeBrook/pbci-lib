@@ -64,7 +64,8 @@ if ( ! class_exists( 'PbciLog' ) ) {
 		static function get_caller_info() {
 			$backtrace_index = 4;
 			$traces          = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, $backtrace_index );
-			$backtrace_index --;
+
+			$backtrace_index--;
 
 			$logger_info = array();
 			if ( isset( $traces[ $backtrace_index ] ) ) {
@@ -73,6 +74,17 @@ if ( ! class_exists( 'PbciLog' ) ) {
 				$logger_info['line']     = isset( $trace['line'] ) ? $trace['line'] : '';
 				$logger_info['function'] = isset( $trace['function'] ) ? $trace['function'] : '';
 				$logger_info['class']    = isset( $trace['class'] ) ? $trace['class'] : '';
+
+				$backtrace_index--;
+				$trace                   = $traces[ $backtrace_index ];
+
+				if ( empty( $logger_info['file']  ) ) {
+					$logger_info['file']     = isset( $trace['file'] ) ? wp_normalize_path( $trace['file'] ) : '';
+				}
+
+				if ( empty( $logger_info['line']  ) ) {
+					$logger_info['line']     = isset( $trace['line'] ) ? $trace['line'] : '';
+				}
 			}
 
 			return $logger_info;
