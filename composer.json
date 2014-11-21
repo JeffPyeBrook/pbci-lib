@@ -1,5 +1,11 @@
 {
-  "name": "pyebrook/pbci-lib",
-  "description": "utility functions for themes and plugins",
-  "license": "(GPLv2 and proprietary)",
+    "name": "jeffrey/pbcilib",
+    "description": "this is it",
+    "authors": [
+        {
+            "name": "Jeffrey Schutzman",
+            "email": "jeff@pyebrook.com"
+        }
+    ],
+    "require": {}
 }
