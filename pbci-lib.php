@@ -24,25 +24,22 @@
 **
 */
 
-
-
-$pbci_file_to_check = dirname( __FILE__) . '/log.php';
+$pbci_file_to_check = dirname( __FILE__) . '/pbci-log.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
-
 
 $pbci_file_to_check = dirname( __FILE__) . '/nag.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
 
-/**
- * Page-Level DocBlock example.
- * @package pbci-lib
- */
-
 $pbci_file_to_check = dirname( __FILE__) . '/about-support.php';
+if (file_exists(  $pbci_file_to_check ) ) {
+	include_once( $pbci_file_to_check );
+}
+
+$pbci_file_to_check = dirname( __FILE__) . '/pbci-check-for-update.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
