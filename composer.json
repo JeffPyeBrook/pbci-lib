@@ -6,7 +6,6 @@
             "email": "jeff@pyebrook.com"
         }
     ],
-    "version": "1.0.0",
     "description" : "pye brook utility library",
     "license": "proprietary"
 }
