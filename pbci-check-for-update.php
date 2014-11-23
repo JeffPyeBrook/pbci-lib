@@ -316,7 +316,7 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 										);
 
 				if ( is_wp_error( $request ) ) {
-					error_log( $request->get_error_message() );
+					pbci_log( $request->get_error_message() );
 				} elseif ( ! is_wp_error( $request ) || wp_remote_retrieve_response_code( $request ) === 200 ) {
 					$info = unserialize( $request ['body'] );
 					if ( $info !== false ) {
@@ -370,7 +370,7 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 		$$token = new PBCIAutoUpdate( $plugin_main_file );
 	} else {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'plugin main file does not exist at ' . $plugin_main_file . ', auto update not setup' );
+			pbci_log( 'plugin main file does not exist at ' . $plugin_main_file . ', auto update not setup' );
 		}
 	}
 }
