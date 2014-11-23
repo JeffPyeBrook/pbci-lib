@@ -24,31 +24,37 @@
 **
 */
 
-$pbci_file_to_check = dirname( __FILE__) . '/pbci-log.php';
-if (file_exists(  $pbci_file_to_check ) ) {
-	include_once( $pbci_file_to_check );
-}
 
-$pbci_file_to_check = dirname( __FILE__) . '/nag.php';
-if (file_exists(  $pbci_file_to_check ) ) {
-	include_once( $pbci_file_to_check );
-}
+function pbci_plugin_page_title_box( $title, $plugin_name = '' ) {
+	if ( function_exists( 'get_current_screen' ) ) {
+		$current_screen = get_current_screen();
+		if ( $current_screen && isset( $current_screen->id ) ) {
+			$current_screen = $current_screen->id;
+		}
+	} else {
+		$current_screen = '';
+	}
 
-$pbci_file_to_check = dirname( __FILE__) . '/about-support.php';
-if (file_exists(  $pbci_file_to_check ) ) {
-	include_once( $pbci_file_to_check );
-}
+	$title_class = 'pbci-plugin-page-title';
 
-$pbci_file_to_check = dirname( __FILE__) . '/pbci-check-for-update.php';
-if (file_exists(  $pbci_file_to_check ) ) {
-	include_once( $pbci_file_to_check );
-}
+	if (  empty( $current_screen ) ) {
+		$title_class = trim( $title_class . ' ' . $current_screen );
+		if ( ! empty( $title_class ) ) {
+			$title_class = 'class="snappy ' . $title_class . '"';
+		}
+	}
+	?>
+	<h2 <?php echo $title_class;?> >
+		<div class="icon <?php echo( trim( $plugin_name ) );?>-icon"> </div> <?php echo esc_html ( $title );?>
+		<div class="pbci-admin-byline"><span><a href="www.pyebrook.com">by www.pyebrook.com</a></span></div>
 
-$pbci_file_to_check = dirname( __FILE__) . '/util.php';
-if (file_exists(  $pbci_file_to_check ) ) {
-	include_once( $pbci_file_to_check );
-}
+	</h2>
 
+	<hr>
+	<?php
+
+	do_action( 'PBCI_ADMIN_MESSAGES' );
+}
 
 
 
