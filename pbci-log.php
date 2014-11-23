@@ -101,16 +101,20 @@ if ( ! class_exists( 'PbciLog' ) ) {
 
 			$do_the_log = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'PBCI_DEBUG' ) && PBCI_DEBUG );
 
-			$log_file_path = trailingslashit( self::plugin_basedir( $file ) ) . 'testing.log';
-
 			if ( ! $do_the_log ) {
-				// if logging is turned off, and there is an old log file, make it go away
-				if ( file_exists( $log_file_path ) ) {
-					unlink( $log_file_path );
+				$pbci_log_files = get_option( 'pbci_log_files', array() );
+				if ( ! empty( $pbci_log_files ) ) {
+
+					foreach( $pbci_log_files as $log_file_path => $dummy_value  ) {
+						// if logging is turned off, and there is an old log file, make it go away
+						if ( file_exists( $log_file_path ) ) {
+							unlink( $log_file_path );
+						}
+					}
+
+					update_option( 'pbci_log_files' , array() );
 				}
 			} else {
-				$log_file_path = apply_filters( 'pbci_log', $log_file_path );
-
 
 				$text = html_entity_decode( $text );
 
@@ -121,6 +125,16 @@ if ( ! class_exists( 'PbciLog' ) ) {
 				$file = str_replace( $base, '', $file );
 
 				$slug = str_pad( strtolower( basename( $base ) ) . ':', 16, ' ' );
+
+				$log_file_path = $base . sanitize_title( basename( $base ) ) . '.log';
+				$log_file_path = apply_filters( 'pbci_log', $log_file_path );
+
+				$pbci_log_files = get_option( 'pbci_log_files', array() );
+				if ( ! isset( $pbci_log_files[$log_file_path] ) ) {
+					$pbci_log_files[$log_file_path] = true;
+					update_option( 'pbci_log_files' , $pbci_log_files );
+				}
+
 
 				$msg = $slug;
 
