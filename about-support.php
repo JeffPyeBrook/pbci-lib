@@ -71,7 +71,7 @@ function pbci_about_help_support() {
 		<tr><td></td></tr>
 
 		<tr class="pbci-widefat-header-row">
-			<th colspan="2"><a href="www.pyebrook.com">stamps.com for WP-eCommerce</a></th>
+			<th colspan="2"><a href="http://www.pyebrook.com">stamps.com for WP-eCommerce</a></th>
 		</tr>
 
 		<tr>
@@ -88,7 +88,7 @@ function pbci_about_help_support() {
 		<tr><td></td></tr>
 
 		<tr class="pbci-widefat-header-row">
-			<th colspan="2"><a href="www.pyebrook.com">Shopper Rewards for WP-eCommerce</a></th>
+			<th colspan="2"><a href="http://www.pyebrook.com">Shopper Rewards for WP-eCommerce</a></th>
 		</tr>
 
 		<tr>
@@ -116,7 +116,7 @@ function pbci_about_help_support() {
 		<tr><td></td></tr>
 
 		<tr class="pbci-widefat-header-row">
-			<th colspan="2"><a href="www.pyebrook.com">Free Shipping Pro for WP-eCommerce</a></th>
+			<th colspan="2"><a href="http://www.pyebrook.com">Free Shipping Pro for WP-eCommerce</a></th>
 		</tr>
 
 		<tr>
@@ -133,7 +133,7 @@ function pbci_about_help_support() {
 		<tr><td></td></tr>
 
 		<tr class="pbci-widefat-header-row">
-			<th colspan="2"><a href="www.pyebrook.com">Store Admin eMail for WP-eCommerce</a></th>
+			<th colspan="2"><a href="http://www.pyebrook.com">Store Admin eMail for WP-eCommerce</a></th>
 		</tr>
 
 		<tr>
