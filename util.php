@@ -24,37 +24,35 @@
 **
 */
 
-
-function pbci_plugin_page_title_box( $title, $plugin_name = '' ) {
-	if ( function_exists( 'get_current_screen' ) ) {
-		$current_screen = get_current_screen();
-		if ( $current_screen && isset( $current_screen->id ) ) {
-			$current_screen = $current_screen->id;
+if ( ! function_exists( 'pbci_plugin_page_title_box' ) ) {
+	function pbci_plugin_page_title_box( $title, $plugin_name = '' ) {
+		if ( function_exists( 'get_current_screen' ) ) {
+			$current_screen = get_current_screen();
+			if ( $current_screen && isset( $current_screen->id ) ) {
+				$current_screen = $current_screen->id;
+			}
+		} else {
+			$current_screen = '';
 		}
-	} else {
-		$current_screen = '';
-	}
 
-	$title_class = 'pbci-plugin-page-title';
+		$title_class = 'pbci-plugin-page-title';
 
-	if (  empty( $current_screen ) ) {
-		$title_class = trim( $title_class . ' ' . $current_screen );
-		if ( ! empty( $title_class ) ) {
-			$title_class = 'class="snappy ' . $title_class . '"';
+		if ( empty( $current_screen ) ) {
+			$title_class = trim( $title_class . ' ' . $current_screen );
+			if ( ! empty( $title_class ) ) {
+				$title_class = 'class="snappy ' . $title_class . '"';
+			}
 		}
+		?>
+		<h2 <?php echo $title_class; ?> >
+			<div class="icon <?php echo( trim( $plugin_name ) ); ?>-icon"></div> <?php echo esc_html( $title ); ?>
+			<div class="pbci-admin-byline"><span><a href="www.pyebrook.com">by www.pyebrook.com</a></span></div>
+
+		</h2>
+
+		<hr>
+		<?php
+
+		do_action( 'PBCI_ADMIN_MESSAGES' );
 	}
-	?>
-	<h2 <?php echo $title_class;?> >
-		<div class="icon <?php echo( trim( $plugin_name ) );?>-icon"> </div> <?php echo esc_html ( $title );?>
-		<div class="pbci-admin-byline"><span><a href="www.pyebrook.com">by www.pyebrook.com</a></span></div>
-
-	</h2>
-
-	<hr>
-	<?php
-
-	do_action( 'PBCI_ADMIN_MESSAGES' );
 }
-
-
-

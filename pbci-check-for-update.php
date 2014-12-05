@@ -23,12 +23,12 @@
 **
 */
 
+if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 
 
 // only update when we are showing an admin page or doing cron processing
-if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
+	if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 
-	if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 		/**
 		 * Class PBCIAutoUpdate
 		 */
@@ -241,6 +241,7 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 				if ( property_exists( $arg, 'slug' ) ) {
 					if ( $arg->slug === $this->plugin_basename ) {
 						$information = $this->get_remote_information();
+
 						return $information;
 					}
 				}
@@ -270,7 +271,7 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 				$args = array( 'body' => $body, );
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					$cookies[] = new WP_Http_Cookie( array( 'name' => 'XDEBUG_SESSION', 'value' => 'PHPSTORM' ) );
+					$cookies[]       = new WP_Http_Cookie( array( 'name' => 'XDEBUG_SESSION', 'value' => 'PHPSTORM' ) );
 					$args['cookies'] = $cookies;
 				}
 
@@ -307,13 +308,13 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 				$body ['site_url']         = parse_url( site_url(), PHP_URL_HOST );
 
 				$request = wp_remote_post(
-											$this->get_update_path(),
-											array(
-													'body'     => $body,
-				                                    'timeout'  => 15,
-				                                    'blocking' => true
-											)
-										);
+					$this->get_update_path(),
+					array(
+						'body'     => $body,
+						'timeout'  => 15,
+						'blocking' => true
+					)
+				);
 
 				if ( is_wp_error( $request ) ) {
 					pbci_log( $request->get_error_message() );
@@ -321,6 +322,7 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 					$info = unserialize( $request ['body'] );
 					if ( $info !== false ) {
 						$this->update_path = $info->download_link;
+
 						return $info;
 					}
 				}
@@ -361,18 +363,19 @@ if ( is_admin() || ( defined( 'WP_CRON' ) && WP_CRON ) ) {
 				return false;
 			}
 		}
-	} // end class exists
 
-	// get an auto update object specific to this directory
-	$plugin_main_file = dirname( __FILE__ ) . '/' . basename( dirname( __FILE__ ) ) . '.php';
-	if ( file_exists( $plugin_main_file ) ) {
-		$token  = str_replace( '-', '_', basename( __DIR__ ) ) . '_auto_update';
-		$$token = new PBCIAutoUpdate( $plugin_main_file );
-	} else {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			pbci_log( 'plugin main file does not exist at ' . $plugin_main_file . ', auto update not setup' );
+		// get an auto update object specific to this directory
+		$plugin_main_file = dirname( __FILE__ ) . '/' . basename( dirname( __FILE__ ) ) . '.php';
+		if ( file_exists( $plugin_main_file ) ) {
+			$token  = str_replace( '-', '_', basename( __DIR__ ) ) . '_auto_update';
+			$$token = new PBCIAutoUpdate( $plugin_main_file );
+		} else {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				pbci_log( 'plugin main file does not exist at ' . $plugin_main_file . ', auto update not setup' );
+			}
 		}
 	}
-}
+
+} // end class exists
 
 
