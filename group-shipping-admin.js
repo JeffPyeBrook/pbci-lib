@@ -1,8 +1,10 @@
 jQuery(document).ready(function(){
-	
-	jQuery('.mydatepicker').datepicker({
-		dateFormat : 'yy-mm-dd'
-	});
+
+    if ( jQuery('.mydatepicker').length ) {
+        jQuery('.mydatepicker').datepicker({
+            dateFormat: 'yy-mm-dd'
+        });
+    }
 	
 	function show_popup( group_ship ){ 	
 		 var src = sw.ajaxurl +'?action=get_mailing_labels&group_ship='+group_ship+'&_ajax_nonce='+sw.nonce;

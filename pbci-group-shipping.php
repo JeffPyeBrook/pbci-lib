@@ -3,7 +3,7 @@
  Plugin Name: PBCI Group Shipping
  Plugin URI:
  Description: Group Shipping Options
- Version: 1.1
+ Version: 2.0
  Author: PBCI / Jeffrey Schutzman
  Author URI:
 */
@@ -46,7 +46,6 @@ class pbci_group_shipping {
 	    wp_register_script( 'pbci_gs', plugin_dir_url( __FILE__ ) .  'group-shipping-admin.js' );
 	    wp_localize_script( 'pbci_gs', 'myAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
     	wp_enqueue_script( 'pbci_gs' );
-
 	}
 
 
@@ -173,8 +172,9 @@ class pbci_group_shipping {
 	 */
 	function getQuote() {
 
-		if ( !function_exists('bling_get_design_id') )
+		if ( ! function_exists('sg_get_product_design_id') ) {
 			return;
+		}
 
 		global $wpdb, $wpsc_cart;
 		//bling_log(get_class().'::'.__FUNCTION__);
@@ -184,28 +184,34 @@ class pbci_group_shipping {
 		if ( is_array ( $wpsc_cart->cart_items ) && !empty( $wpsc_cart->cart_items ) ) {
 			foreach ( $wpsc_cart->cart_items as $cart_item ) {
 				$product_id = $cart_item->product_id;
-				$design_id = bling_get_design_id( $product_id );
+				$design_id = sg_get_product_design_id( $product_id );
 				$design_title = get_the_title( $design_id );
-				if ( !empty ( $design_id ) ) {
-					$design_themes = wp_get_object_terms ( $design_id, 'bling_design_theme'  );
-					$design_theme_ids = wp_get_object_terms ( $design_id, 'bling_design_theme' ,  array( 'fields'=>'ids') );
-					foreach ( $design_themes as $design_theme ) {
-						if ( $design_theme->parent == 0 )
-							continue;
 
-						$design_theme_id = $design_theme->term_id;
+				if ( ! empty ( $design_id ) ) {
+
+					$sg_design = new SG_Design( $design_id );
+
+					//$design_themes = wp_get_object_terms ( $design_id, 'bling_design_theme'  );
+					$design_themes = $sg_design->get_theme_term_list();
+
+//					foreach ( $design_themes as $design_theme ) {
+//						if ( $design_theme->parent == 0 )
+//							continue;
+
+						//$design_theme_id = $design_theme->term_id;
 
 						$args = array(
 								'post_type' => 'group-shipping',
 								'fields'    => 'ids',
-								'tax_query' => array(
-										array(
-												'taxonomy' => 'bling_design_theme',
-												'field' => 'id',
-												'terms' => intval($design_theme_id),
-										),
-								)
-						);
+								'meta_query' => array(
+														array(
+															'key'     => 'design-theme',
+															'value'   => array_keys( $design_themes ),
+															'compare' => 'IN',
+														),
+													),
+
+								);
 
 						$results = new WP_Query( $args );
 						foreach ( $results->posts as $group_ship_id ) {
@@ -235,7 +241,7 @@ class pbci_group_shipping {
 							}
 						}
 					}
-				}
+//				}
 			}
 		}
 
@@ -283,7 +289,8 @@ function pbci_group_shipping_post_type() {
 				'show_in_menu' => true,
 				'show_in_nav_menus' => true,
 				'supports' => array( 'title' ),
-				'taxonomies' => array( 'bling_design_theme' ),
+//				'taxonomies' => array( 'design-theme' ),
+				'register_meta_box_cb' => 'add_groupship_metaboxes'
 		);
 
 		register_post_type( 'group-shipping', $args );
@@ -300,4 +307,75 @@ function pbci_group_shipping_add( $wpsc_shipping_modules ) {
 }
 
 add_filter( 'wpsc_shipping_modules', 'pbci_group_shipping_add' );
+
+function add_groupship_metaboxes() {
+    add_meta_box('group_shipping_theme', 'Group Shipping For', 'group_shipping_callback',  'group-shipping', 'side', 'high');
+}
+
+// The Event Location Metabox
+
+function group_shipping_callback( $post ) {
+
+	global $post;
+
+	$current = get_post_meta( $post->ID, 'design-theme',  true );
+
+	$term = get_term_by( 'name', 'Our Gear', 'design-theme' );
+
+	$args = array(
+		'show_option_all'    => '',
+		'show_option_none'   => '',
+		'orderby'            => 'name',
+		'order'              => 'ASC',
+		'show_count'         => 0,
+		'hide_empty'         => 0,
+		'child_of'           => $term->term_id,
+		'exclude'            => '',
+		'echo'               => 1,
+		'selected'           => $current,
+		'hierarchical'       => 0,
+		'name'               => 'design-theme',
+		'id'                 => '',
+		'class'              => 'postform',
+		'depth'              => 0,
+		'tab_index'          => 0,
+		'taxonomy'           => 'design-theme',
+		'hide_if_empty'      => false,
+	);
+
+
+
+
+	// Noncename needed to verify where the data originated
+	echo '<input type="hidden" name="eventmeta_noncename" id="eventmeta_noncename" value="' . wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
+
+	wp_dropdown_categories( $args );
+	?>
+	<form action="<?php bloginfo('url'); ?>/" method="get">
+		<div>
+			<?php
+
+			?>
+			<noscript><div><input type="submit" value="View" /></div></noscript>
+		</div>
+	</form>
+	<?php
+
+}
+
+
+function save_group_shipping( $post_id, $post, $update ) {
+
+	// If this isn't a 'book' post, don't update it.
+	if ( 'group-shipping' != $post->post_type ) {
+		return;
+	}
+
+	if ( isset( $_POST['design-theme'] ) ) {
+		update_post_meta( $post_id, 'design-theme',  $_POST['design-theme'] );
+	}
+
+}
+
+add_action( 'save_post', 'save_group_shipping', 10, 3 );
 
