@@ -1,123 +1,195 @@
 <?php
 /*
- * * Copyright 2010-2013, Pye Brook Company, Inc. * * Licensed under the Pye
- * Brook Company, Inc. License, Version 1.0 (the "License"); * you may not use
- * this file except in compliance with the License. * You may obtain a copy of
- * the License at * * http://www.pyebrook.com/ * * This software is not free may
- * not be distributed, and should not be shared. It is governed by the * license
- * included in its original distribution (license.pdf and/or license.txt) and by
- * the * license found at www.pyebrook.com. * This software is copyrighted and
- * the property of Pye Brook Company, Inc. * * See the License for the specific
- * language governing permissions and * limitations under the License. * *
- * Contact Pye Brook Company, Inc. at info@pyebrook.com for more information.
- */
-include_once ( plugin_dir_path( __FILE__ ) . 'packing-lists.php' );
-include_once ( plugin_dir_path( __FILE__ ) . 'order-summary.php' );
-include_once ( plugin_dir_path( __FILE__ ) . 'mailing-labels.php' );
+** Copyright 2010-2014, Pye Brook Company, Inc.
+**
+**
+** This software is provided under the GNU General Public License, version
+** 2 (GPLv2), that covers its  copying, distribution and modification. The
+** GPLv2 license specifically states that it only covers only copying,
+** distribution and modification activities. The GPLv2 further states that
+** all other activities are outside of the scope of the GPLv2.
+**
+** All activities outside the scope of the GPLv2 are covered by the Pye Brook
+** Company, Inc. License. Any right not explicitly granted by the GPLv2, and
+** not explicitly granted by the Pye Brook Company, Inc. License are reserved
+** by the Pye Brook Company, Inc.
+**
+** This software is copyrighted and the property of Pye Brook Company, Inc.
+**
+** Contact Pye Brook Company, Inc. at info@pyebrook.com for more information.
+**
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+** A PARTICULAR PURPOSE.
+**
+*/
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'packing-lists.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'packing-lists.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'order-summary.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'order-summary.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'mailing-labels.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'mailing-labels.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'wpec-hooks.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'wpec-hooks.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/pbci-metabox.class.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/pbci-metabox.class.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/shipping-cost.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/shipping-cost.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-dates.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-dates.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-times.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-times.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/within-distance.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/within-distance.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/with-keyword.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/with-keyword.php' );
+}
+
+if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/filters.php' ) ) {
+	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/filters.php' );
+}
+
+if ( is_admin() ) {
+	do_action( 'pbci_gs_setup_ship_mb' );
+}
 
 function pbci_group_shipping_admin_init() {
-	add_meta_box( 'pbci_group_shipping_meta_box', 'This Group Ship Available for Orders Between These Dates', 'pbci_group_shipping_meta_box', 'group-shipping', 'normal', 'high' );
 
-	wp_register_script( 'group-ship-admin', plugins_url( 'group-shipping-admin.js', __FILE__ ), array(), false, false );
+	wp_register_script( 'group-ship-admin', plugins_url( 'script/group-shipping-admin.js', __FILE__ ), array(), false, false );
 	wp_localize_script( 'group-ship-admin', 'myAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 	wp_enqueue_script( 'group-ship-admin' );
 
+
+	wp_register_script(
+		'gs-datetimepicker',
+		plugins_url( 'script/datetimepicker.js', __FILE__ ),
+		array( 'jquery', 'jquery-ui-datepicker' ),
+		false,
+		false
+	);
+
+	wp_enqueue_script( 'gs-datetimepicker' );
+
+	wp_register_script(
+		'jquery-ui-timepicker-addon',
+		plugins_url( 'script/jquery-ui-timepicker-addon.js', __FILE__ ),
+		array( 'jquery', 'jquery-ui-datepicker' ),
+		false,
+		false
+	);
+
+	wp_enqueue_script( 'jquery-ui-timepicker-addon' );
+
 	add_submenu_page( 'edit.php?post_type=group-shipping', 'Packing Lists', 'Packing Lists', 'edit_posts', 'pbci_gs_packing_list', 'pbci_gs_packing_list' );
+
 }
 
 add_action( 'admin_menu', 'pbci_group_shipping_admin_init', 11 );
 
-function pbci_group_shipping_meta_box( $post ) {
+
+function pbci_gs_mb_settings( $post ) {
 	$id = $post->ID;
 
-	// //////////////////////////////////////////////////////////////////
-	// get some default times
-	$datetime = new DateTime( $post->post_date );
-	$start_date = $datetime->format( 'Y-m-d' );
-	$x = strtotime( '+7 days', strtotime( $start_date ) );
-	$end_date = date( 'Y-m-d', $x );
-	$start_time = '00:00';
-	$end_time = '23:59';
+	$shipping_method_name = get_post_meta( $id, '_shipping_method_name', true );
+	$shipping_option_name = get_post_meta( $id, '_shipping_option_name', true );
 
-	// //////////////////////////////////////////////////////////////////
-	// If there are saved times we can work with them
-	$start_date = $post->post_date;
+	$special_slug = get_post_meta( $id, '_special_slug', true );
 
-	$saved_start_date = get_post_meta( $id, 'start_date', true );
-	$saved_end_date = get_post_meta( $id, 'end_date', true );
-	$cost = get_post_meta( $id, 'cost', true );
-
-	if ( ! empty( $saved_start_date ) ) {
-		try {
-			$datetime = new DateTime( $saved_start_date );
-			$start_date = $datetime->format( 'Y-m-d' );
-			$start_time = $datetime->format( 'H:i' );
-		} catch ( Exception $e ) {
-			bling_log( 'malformed start date or time' );
-		}
+	if ( empty( $shipping_method_name ) ) {
+		$shipping_method_name = 'Special Shipping';
 	}
 
-	if ( ! empty( $saved_end_date ) ) {
-		try {
-			$datetime = new DateTime( $saved_end_date );
-			$end_date = $datetime->format( 'Y-m-d' );
-			$end_time = $datetime->format( 'H:i' );
-		} catch ( Exception $e ) {
-			bling_log( 'malformed end date or time' );
-		}
+	if ( empty( $shipping_option_name ) ) {
+		$shipping_option_name = $post->post_title;
+	}
+
+	if ( empty( $special_slug ) ) {
+		$special_slug = sanitize_title( $shipping_option_name );
 	}
 
 	?>
-	<p>
-	<label for="startdate">Start Date:</label> <input class="mydatepicker"
-		type="text" id="startdate" name="startdate"
-		value="<?php echo $start_date;?>">
-	</p>
-	<p>
-	<label for="starttime">Start Time:</label> <input type="text"
-		id="starttime" name="starttime" readonly="readonly"
-		value="<?php echo $start_time;?>">
-	</p>
+	<table class="widefat">
+		<tr>
+			<td>
+				<label for="shipping-method-name">Shipping Method Name:</label>
+			</td>
+			<td>
+				<input size="40"
+				       class="shipping-method-name"
+				       type="text"
+				       id="shipping-method-name"
+				       name="shipping-method-name"
+				       value="<?php echo $shipping_method_name; ?>">
+				<br>
+				<em>
+					This is the shipping method shown to the shopper on the checkout page. Shipping options are grouped
+					by shipping methods.
+				</em>
 
-	<p>
-	<label for="enddate">End Date:</label> <input class="mydatepicker"
-		type="text" id="enddate" name="enddate"
-		value="<?php echo $end_date;?>">
-	</p>
+			</td>
+		</tr>
 
-	<p>
-	<label for="endtime">End Time:</label> <input type="text" id="endtime"
-		name="endtime" readonly="readonly" value="<?php echo $end_time;?>">
-	</p>
+		<tr>
+			<td>
+				<label for="shipping-option-name">Shipping Option Name:</label>
+			</td>
+			<td>
+				<input size="40"
+				       class="shipping-option-name"
+				       type="text"
+				       id="shipping-option-name"
+				       name="shipping-option-name"
+				       value="<?php echo $shipping_option_name; ?>">
 
-	<p>
-	<label for="cost">Cost:</label> <input type="text" id="cost"
-		name="cost" value="<?php echo $cost;?>">
-	</p>
+				<br>
+				<em>
+					This is the shipping option shown to the shopper on the checkotu page. Shipping options are grouped
+					by shipping methods.
+				</em>
 
-	<input type="hidden" id="groupshipid" name="id"
-		value="<?php echo $id;?>">
-	<?php
+			</td>
+		</tr>
+
+
+		<tr>
+			<td>
+				<label for="special-slug">Special Slug:</label>
+			</td>
+			<td>
+				<input size="40"
+				       class="special-slug"
+				       type="text"
+				       id="special-slug"
+				       name="special-slug"
+				       value="<?php echo $special_slug; ?>">
+
+				<br>
+				<em>
+					The special slug will be passed to the eligibilty filters (see below).
+				</em>
+			</td>
+		</tr>
+
+	</table>
+
+<?php
 }
-
-function pbci_group_shipping_meta_box_save( $id ) {
-	if ( get_post_type( $id ) != 'group-shipping' )
-		return;
-
-	update_post_meta( $id, 'start_date', $_POST ['startdate'] . ' ' . $_POST ['starttime'] );
-	update_post_meta( $id, 'end_date', $_POST ['enddate'] . ' ' . $_POST ['endtime'] );
-	update_post_meta( $id, 'cost', $_POST ['cost'] );
-}
-
-add_action( 'save_post', 'pbci_group_shipping_meta_box_save' );
-
-function pbci_gs_admin_register_head() {
-	$siteurl = get_option( 'siteurl' );
-	$url = $siteurl . '/wp-content/plugins/' . basename( dirname( __FILE__ ) ) . '/admin.css';
-	echo "<link rel='stylesheet' type='text/css' href='$url' />\n";
-}
-
-if ( is_admin() ) {
-	add_action( 'admin_head', 'pbci_gs_admin_register_head' );
-}
-

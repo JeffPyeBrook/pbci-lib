@@ -37,7 +37,7 @@ function packing_list_wrapper( ) {
 		<meta charset="utf-8">
 		<title>Packing List for <?php echo $shipping_option;?></title>
 
-		<link rel="stylesheet" type="text/css" href="admin.css" />
+		<link rel="stylesheet" type="text/css" href="script/admin.css" />
 		<style>
 		.print-link, .mailing-labels-links, .back-link {
 			display: none;
@@ -82,7 +82,7 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 	<a id="<?php echo urlencode($group_ship);?>" href="#" class="print-packing-list-popup print-link">Print</a>
 
 	<hr>
-	<table  class="group-ship group-ship-order-status">
+	<table  class="widefat group-ship group-ship-order-status">
 		<tr>
 			<th>
 				Order ID
@@ -163,7 +163,7 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 	<hr>
 	<div class="page-break"></div>
 	<h3>Product Details</h3>
-	<table  class="group-ship group-ship-product-list">
+	<table  class="widefat group-ship group-ship-product-list">
 		<tr>
 			<th>
 				Order ID
@@ -199,15 +199,23 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 		$lastname  = trim( $checkout_form_data->get( 'billinglastname' ) );
 
 		foreach ( $cart_contents as $cart_item ) {
-			$custom_message = pbci_gs_cart_item_custom_message($cart_item->id);
+			//$custom_message = pbci_gs_cart_item_custom_message($cart_item->id);
 			?>
 			<tr>
 				<td><?php pbci_gs_sales_log_link( $purchase_log_id );?></td>
 				<td><?php echo $cart_item->quantity;?></td>
 				<td><?php echo ucwords($lastname . ', ' . $firstname);?></td>
 				<td>
-					<?php echo $cart_item->name;?>
-					<?php if ( !empty( $custom_message ) ) echo $custom_message;?>
+					<?php echo esc_html( $cart_item->name );?>
+					<?php
+					$custom_messages = apply_filters( 'pbci_get_cart_item_extra_message', '', $cart_item, $purchase_log_id );
+					if ( ! empty( $custom_messages ) ) {
+						foreach( $custom_messages as $custom_message )
+						if ( ! empty( $custom_message ) ) {
+							echo '<br>' . $custom_message;
+						}
+					}
+					?>
 				</td>
 			</tr>
 			<?php
@@ -239,192 +247,192 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 	<br>
 	<hr>
 
-	<h3>Design Details</h3>
-	<table  class="group-ship group-ship-design-details">
-		<tr>
-			<th>
-				ID
-			</th>
-
-			<th>
-				Quantity
-			</th>
-
-			<th>
-				Design
-			</th>
-
-		</tr>
-
-	<?php
-	$count = 0;
-
-	$summaries = array();
-	$designs_count = array();
-	$designs_id = array();
-	$designs_description = array();
-
-	$customs = array();
-
-	foreach ($purchase_log_ids as $purchase_log_id ) {
-
-		$purchase_log = new WPSC_Purchase_Log( $purchase_log_id );
-		$purchaser_user_id = $purchase_log->get( 'user_ID' );
-		$cart_contents = $purchase_log->get_cart_contents();
-
-		foreach ( $cart_contents as $cart_item ) {
-			$custom_message = pbci_gs_cart_item_custom_message($cart_item->id);
-			$design_id = bling_get_design_id( $cart_item->prodid );
-			$design_name = bling_get_design_name( $cart_item->prodid );
-
-			$design_key = md5( $custom_message . $design_name );
-
-			if ( !isset( $designs_count[$design_key] ) ) {
-				$designs_id[$design_key] = $design_id;
-				$designs_count[$design_key] = 0;
-				$designs_description[$design_key] = $design_name . '<br>' . $custom_message;
-			}
-
-			$designs_count[$design_key] += $cart_item->quantity;
-		}
-
-	}
-
-	asort($designs_id);
-
-	foreach ( $designs_id as $design_key => $design_id ) {
-		?>
-		<tr>
-			<td><?php pbci_gs_item_link( $design_id );?></td>
-			<td><?php echo $designs_count[$design_key];?></td>
-			<td><?php echo $designs_description[$design_key];?></td>
-		</tr>
-		<?php
-	}
-
-	?>
-	</table>
-
-	<hr>
-	<div class="page-break"></div>
-	<h3>Apparel &amp; Accessory Details</h3>
-	<table  class="group-ship group-ship-apparel-details">
-		<tr>
-			<th>
-				ID
-			</th>
-
-			<th>
-				Quantity
-			</th>
-
-			<th>
-				Apparel &amp; Accessory Item
-			</th>
-
-			<th>
-				Color
-			</th>
-
-			<th>
-				Size
-			</th>
-
-		</tr>
-
-	<?php
-	$articles_count = array();
-	$articles = array();
-
-	$customs = array();
-
-	foreach ($purchase_log_ids as $purchase_log_id ) {
-
-		$purchase_log = new WPSC_Purchase_Log( $purchase_log_id );
-		$purchaser_user_id = $purchase_log->get( 'user_ID' );
-		$cart_contents = $purchase_log->get_cart_contents();
-
-		foreach ( $cart_contents as $cart_item ) {
-			$article = new Bling_Article( $cart_item->prodid );
-			$color = $article->color();
-			$size =  $article->size();
-
-			$article_key = md5( $article->name() . $color . $size );
-
-			if ( !isset( $articles_count[$article_key] ) ) {
-				$articles[$article_key] = $article;
-				$articles_count[$article_key] = 0;
-			}
-
-			$articles_count[$article_key] += $cart_item->quantity;
-		}
-
-	}
-
-	asort($articles);
-
-	function size_num ( $s ) {
-		$n = 0;
-		$size_name = $s;
-		//return 0;
-		if ( strpos( $size_name, '(XS)' ) !== false )
-			$n = 1;
-		else if ( strpos( $size_name, '(S)' ) !== false )
-			$n = 2;
-		else if ( strpos( $size_name, '(M)' ) !== false )
-			$n = 3;
-		else if ( strpos( $size_name, '(L)' ) !== false )
-			$n = 4;
-		else if ( strpos( $size_name, '(XL)' ) !== false )
-			$n = 5;
-		else if ( strpos( $size_name, '(2XL)' ) !== false )
-			$n = 6;
-		else if ( strpos( $size_name, '(3XL)' ) !== false )
-			$n = 7;
-		else if ( strpos( $size_name, '(4XL)' ) !== false )
-			$n = 8;
-		else if ( strpos( $size_name, '(5XL)' ) !== false )
-			$n = 9;
-		else if ( strpos( $size_name, '(5XL)' ) !== false )
-			$n = 0;
-
-		return $n;
-	}
-
-	// Comparison function
-	function article_cmp($a, $b) {
-		if ( $a->name() == $b->name() ) {
-			$size_a = size_num( $a->size() );
-			$size_b = size_num( $b->size() );
-
-			if ( $size_a == $size_b )
-				return 0;
-
-			return ($size_a < $size_b) ? -1 : 1;
-
-		}
-
-		return (strcmp( $a->name(), $b->name()) );
-	}
-
-	// Sort and print the resulting array
-	uasort($articles, 'article_cmp');
-
-	foreach ( $articles as $article_key => $article ) {
-		?>
-		<tr>
-			<td><?php pbci_gs_item_link( $article->id() );?></td>
-			<td><?php echo $articles_count[$article_key];?></td>
-			<td><?php echo $article->name();?></td>
-			<td><?php echo $article->color();?></td>
-			<td><?php echo $article->size();?></td>
-		</tr>
-		<?php
-	}
-
-	?>
-	</table>
-	<hr>
+<!--	<h3>Design Details</h3>-->
+<!--	<table  class="group-ship group-ship-design-details">-->
+<!--		<tr>-->
+<!--			<th>-->
+<!--				ID-->
+<!--			</th>-->
+<!---->
+<!--			<th>-->
+<!--				Quantity-->
+<!--			</th>-->
+<!---->
+<!--			<th>-->
+<!--				Design-->
+<!--			</th>-->
+<!---->
+<!--		</tr>-->
+<!---->
+<!--	--><?php
+//	$count = 0;
+//
+//	$summaries = array();
+//	$designs_count = array();
+//	$designs_id = array();
+//	$designs_description = array();
+//
+//	$customs = array();
+//
+//	foreach ($purchase_log_ids as $purchase_log_id ) {
+//
+//		$purchase_log = new WPSC_Purchase_Log( $purchase_log_id );
+//		$purchaser_user_id = $purchase_log->get( 'user_ID' );
+//		$cart_contents = $purchase_log->get_cart_contents();
+//
+//		foreach ( $cart_contents as $cart_item ) {
+//			$custom_message = pbci_gs_cart_item_custom_message($cart_item->id);
+//			$design_id = bling_get_design_id( $cart_item->prodid );
+//			$design_name = bling_get_design_name( $cart_item->prodid );
+//
+//			$design_key = md5( $custom_message . $design_name );
+//
+//			if ( !isset( $designs_count[$design_key] ) ) {
+//				$designs_id[$design_key] = $design_id;
+//				$designs_count[$design_key] = 0;
+//				$designs_description[$design_key] = $design_name . '<br>' . $custom_message;
+//			}
+//
+//			$designs_count[$design_key] += $cart_item->quantity;
+//		}
+//
+//	}
+//
+//	asort($designs_id);
+//
+//	foreach ( $designs_id as $design_key => $design_id ) {
+//		?>
+<!--		<tr>-->
+<!--			<td>--><?php //pbci_gs_item_link( $design_id );?><!--</td>-->
+<!--			<td>--><?php //echo $designs_count[$design_key];?><!--</td>-->
+<!--			<td>--><?php //echo $designs_description[$design_key];?><!--</td>-->
+<!--		</tr>-->
+<!--		--><?php
+//	}
+//
+//	?>
+<!--	</table>-->
+<!---->
+<!--	<hr>-->
+<!--	<div class="page-break"></div>-->
+<!--	<h3>Apparel &amp; Accessory Details</h3>-->
+<!--	<table  class="group-ship group-ship-apparel-details">-->
+<!--		<tr>-->
+<!--			<th>-->
+<!--				ID-->
+<!--			</th>-->
+<!---->
+<!--			<th>-->
+<!--				Quantity-->
+<!--			</th>-->
+<!---->
+<!--			<th>-->
+<!--				Apparel &amp; Accessory Item-->
+<!--			</th>-->
+<!---->
+<!--			<th>-->
+<!--				Color-->
+<!--			</th>-->
+<!---->
+<!--			<th>-->
+<!--				Size-->
+<!--			</th>-->
+<!---->
+<!--		</tr>-->
+<!---->
+<!--	--><?php
+//	$articles_count = array();
+//	$articles = array();
+//
+//	$customs = array();
+//
+//	foreach ($purchase_log_ids as $purchase_log_id ) {
+//
+//		$purchase_log = new WPSC_Purchase_Log( $purchase_log_id );
+//		$purchaser_user_id = $purchase_log->get( 'user_ID' );
+//		$cart_contents = $purchase_log->get_cart_contents();
+//
+//		foreach ( $cart_contents as $cart_item ) {
+//			$article = new Bling_Article( $cart_item->prodid );
+//			$color = $article->color();
+//			$size =  $article->size();
+//
+//			$article_key = md5( $article->name() . $color . $size );
+//
+//			if ( !isset( $articles_count[$article_key] ) ) {
+//				$articles[$article_key] = $article;
+//				$articles_count[$article_key] = 0;
+//			}
+//
+//			$articles_count[$article_key] += $cart_item->quantity;
+//		}
+//
+//	}
+//
+//	asort($articles);
+//
+//	function size_num ( $s ) {
+//		$n = 0;
+//		$size_name = $s;
+//		//return 0;
+//		if ( strpos( $size_name, '(XS)' ) !== false )
+//			$n = 1;
+//		else if ( strpos( $size_name, '(S)' ) !== false )
+//			$n = 2;
+//		else if ( strpos( $size_name, '(M)' ) !== false )
+//			$n = 3;
+//		else if ( strpos( $size_name, '(L)' ) !== false )
+//			$n = 4;
+//		else if ( strpos( $size_name, '(XL)' ) !== false )
+//			$n = 5;
+//		else if ( strpos( $size_name, '(2XL)' ) !== false )
+//			$n = 6;
+//		else if ( strpos( $size_name, '(3XL)' ) !== false )
+//			$n = 7;
+//		else if ( strpos( $size_name, '(4XL)' ) !== false )
+//			$n = 8;
+//		else if ( strpos( $size_name, '(5XL)' ) !== false )
+//			$n = 9;
+//		else if ( strpos( $size_name, '(5XL)' ) !== false )
+//			$n = 0;
+//
+//		return $n;
+//	}
+//
+//	// Comparison function
+//	function article_cmp($a, $b) {
+//		if ( $a->name() == $b->name() ) {
+//			$size_a = size_num( $a->size() );
+//			$size_b = size_num( $b->size() );
+//
+//			if ( $size_a == $size_b )
+//				return 0;
+//
+//			return ($size_a < $size_b) ? -1 : 1;
+//
+//		}
+//
+//		return (strcmp( $a->name(), $b->name()) );
+//	}
+//
+//	// Sort and print the resulting array
+//	uasort($articles, 'article_cmp');
+//
+//	foreach ( $articles as $article_key => $article ) {
+//		?>
+<!--		<tr>-->
+<!--			<td>--><?php //pbci_gs_item_link( $article->id() );?><!--</td>-->
+<!--			<td>--><?php //echo $articles_count[$article_key];?><!--</td>-->
+<!--			<td>--><?php //echo $article->name();?><!--</td>-->
+<!--			<td>--><?php //echo $article->color();?><!--</td>-->
+<!--			<td>--><?php //echo $article->size();?><!--</td>-->
+<!--		</tr>-->
+<!--		--><?php
+//	}
+//
+//	?>
+<!--	</table>-->
+<!--	<hr>-->
 
 
 

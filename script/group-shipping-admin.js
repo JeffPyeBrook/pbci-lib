@@ -1,17 +1,18 @@
 jQuery(document).ready(function(){
 
     if ( jQuery('.mydatepicker').length ) {
-        jQuery('.mydatepicker').datepicker({
-            dateFormat: 'yy-mm-dd'
-        });
+        jQuery('.mydatepicker').datetimepicker( { timeFormat: 'hh:mm tt z' } );
     }
-	
+
+	if ( jQuery('.mytimepicker').length ) {
+		jQuery('.mytimepicker').timepicker({ timeFormat: 'hh:mm tt z' }  );
+	}
+
 	function show_popup( group_ship ){ 	
 		 var src = sw.ajaxurl +'?action=get_mailing_labels&group_ship='+group_ship+'&_ajax_nonce='+sw.nonce;
 		 window.open( src, '_blank', "scrollbars=yes,resizable=yes,width=800,height=500");
 	}
-		
-			
+
 	jQuery('.mailing-labels-popup').click(function(){
 		var group_ship = jQuery( '#group-ship' ).val();
 		show_popup( group_ship );
@@ -31,7 +32,6 @@ jQuery(document).ready(function(){
 		});
 		
 		return false;
-		
 	});
 	
 	

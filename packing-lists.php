@@ -23,8 +23,13 @@
 function pbci_gs_packing_list() {
 	?>
 	<div class="wrap">
-		<?php screen_icon(); ?>
-		<?php if ( isset( $_REQUEST['gs'] ) ) pbci_gs_get_purchases_table( $_REQUEST['gs'] ); else pbci_gs_get_purchases_summary_table(); ?>
+		<?php //screen_icon(); ?>
+		<?php if ( isset( $_REQUEST['gs'] ) ) {
+			pbci_gs_get_purchases_table( $_REQUEST['gs'] );
+		} else {
+			pbci_gs_get_purchases_summary_table();
+		}
+		?>
 	</div>
 	<?php
 }
@@ -41,7 +46,7 @@ function pbci_gs_packing_list() {
 function wp_dropdown_shipping( $echo = true ) {
 
 	$args = array(
-			'post_type' => 'group-shipping',
+			'post_type' =>  pbci_gs_post_type(),
 			'post_status' => 'publish',
 	);
 
@@ -106,7 +111,7 @@ function pbci_gs_get_purchase_order_status ( $purchase_log ) {
 
 function pbci_gs_get_purchases_summary_table() {
 	?>
-	<h2>Group Shipping Summary</h2>
+	<h2><?php echo pbci_gs_module_name();?></h2>
 	<hr>
 	<?php
 
@@ -148,7 +153,7 @@ function pbci_gs_get_purchases_summary_table() {
 	}
 
 	?>
-	<h3>Group Shipping Order Summary</h3>
+	<h3><?php echo pbci_gs_module_name();?></h3>
 	<table class="group-shipping-summary">
 	<tr>
 	<th>Group Ship</th>
@@ -174,7 +179,7 @@ function pbci_gs_get_purchases_summary_table() {
 
 	<hr>
 
-	<h3>Group Shipping Item Summary</h3>
+	<h3><?php echo pbci_gs_module_name();?> Item Summary</h3>
 	<table class="group-shipping-summary">
 	<tr>
 	<th>Group Ship</th>
