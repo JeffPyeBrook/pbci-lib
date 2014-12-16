@@ -1,4 +1,5 @@
 <?php
+
 /*
 ** Copyright 2010-2014, Pye Brook Company, Inc.
 **
@@ -25,135 +26,46 @@
 */
 
 
-
 class pbci_group_shipping {
 
-	var $internal_name, $name;
+	public $internal_name;
+	public $name;
+	protected $shipping_option_post_ids = false;
 
-	/**
-	 *
-	 *
-	 * @return unknown
-	 */
-	function pbci_group_shipping() {
+	function __construct( $method_name = 'Delivery Options' ) {
 
 		// An internal reference to the method - must be unique!
-		$this->internal_name = "pbci_group_shipping";
+		$this->internal_name = sanitize_title( $method_name );
 
 		// $this->name is how the method will appear to end users
-		$this->name = "Sparkle Gear Partner Pickup";
-
-		// Set to FALSE - doesn't really do anything :)
-		$this->is_external = TRUE;
-
-		$result = add_filter( 'cart_eligible_for_free_shipping', array( &$this, 'cart_eligible_for_group_shipping' ) , 10, 2 );
-
-		add_action( 'admin_enqueue_scripts', array($this, 'enqueue_js') );
+		$this->name        = $method_name;
+		$this->is_external = false;
 
 		return true;
-
 	}
 
-//	function enqueue_js( ) {
-////	    wp_register_script( 'pbci_gs', plugin_dir_url( __FILE__ ) .  'group-shipping-admin.js' );
-//		wp_localize_script( 'pbci_gs', 'myAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' )));
-//		wp_enqueue_script( 'pbci_gs' );
-//	}
-//
-//
-
-	function cart_eligible_for_group_shipping( $is_eligible, $wpsc_cart ) {
-
-		if ( !function_exists('bling_get_design_id') )
-			return;
-
-		global $wpdb;
-
-		if ( is_array ( $wpsc_cart->cart_items ) && !empty( $wpsc_cart->cart_items ) ) {
-			foreach ( $wpsc_cart->cart_items as $cart_item ) {
-				$product_id = $cart_item->product_id;
-				$design_id = bling_get_design_id( $product_id );
-
-				if ( ! empty ( $design_id ) ) {
-					$design_themes = wp_get_object_terms( $design_id, 'bling_design_theme'  );
-					$design_theme_ids = wp_get_object_terms( $design_id, 'bling_design_theme' ,  array( 'fields' => 'ids' ) );
-					foreach ( $design_themes as $design_theme ) {
-						if ( $design_theme->parent == 0 )
-							continue;
-
-						$design_theme_id = $design_theme->term_id;
-
-						$args = array(
-							'post_type' =>  pbci_gs_post_type(),
-							'fields'    => 'ids',
-							'tax_query' => array(
-								array(
-									'taxonomy' => 'bling_design_theme',
-									'field' => 'id',
-									'terms' => intval($design_theme_id),
-								),
-							)
-						);
-
-						$results = new WP_Query( $args );
-						foreach ( $results->posts as $group_ship_id ) {
-							$saved_start_date = get_post_meta($group_ship_id, 'start_date', true );
-							$saved_end_date = get_post_meta($group_ship_id, 'end_date', true );
-
-							try {
-								$datetime = new DateTime($saved_start_date);
-								$start_date = strtotime ($saved_start_date);
-							} catch (Exception $e) {
-								bling_log( 'malformed start date or time: '. $saved_start_date);
-								$start_date = 0;
-							}
-
-							try {
-								$datetime = new DateTime($saved_end_date);
-								$end_date = strtotime($saved_end_date);
-							} catch (Exception $e) {
-								bling_log( 'malformed start date or time: '. $saved_end_date);
-								$end_date = 0;
-							}
-
-							$now = time();
-
-							if ( $now >= $start_date  && $now <= $end_date ) {
-								$is_eligible = true;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		return $is_eligible;
-	}
-
-	/**
-	 *
-	 *
-	 * @return unknown
-	 */
 	function getName() {
 		return $this->name;
 	}
 
-	/**
-	 *
-	 *
-	 * @return unknown
-	 */
 	function getInternalName() {
 		return $this->internal_name;
 	}
 
+	function get_shipping_option_ids() {
 
-	/**
-	 *
-	 *
-	 * @return unknown
-	 */
+		if ( ! $this->shipping_option_post_ids ) {
+			$shipping_groups = get_option( 'pbcs_gs_shipping_groups', array() );
+
+			if ( isset( $shipping_groups[ $this->getName() ] ) ) {
+				$this->shipping_option_post_ids = $shipping_groups[ $this->getName() ];
+			}
+		}
+
+		return $this->shipping_option_post_ids;
+	}
+
+
 	function getForm() {
 // 		$free_priority_shipping_threshold = get_option( 'free_priority_shipping_threshold', '50.0');
 
@@ -179,86 +91,33 @@ class pbci_group_shipping {
 		return true;
 	}
 
-	/**
-	 *
-	 *
-	 * @return unknown
-	 */
+
 	function getQuote() {
 
-		if ( ! function_exists('sg_get_product_design_id') ) {
-			return;
-		}
-
-		global $wpdb, $wpsc_cart;
-		//bling_log(get_class().'::'.__FUNCTION__);
+		global $wpsc_cart;
 
 		$shipping_quotes = array();
 
-		if ( is_array ( $wpsc_cart->cart_items ) && !empty( $wpsc_cart->cart_items ) ) {
-			foreach ( $wpsc_cart->cart_items as $cart_item ) {
-				$product_id = $cart_item->product_id;
-				$design_id = sg_get_product_design_id( $product_id );
-				$design_title = get_the_title( $design_id );
+		$shipping_option_ids = $this->get_shipping_option_ids();
 
-				if ( ! empty ( $design_id ) ) {
+		foreach ( $shipping_option_ids as $shipping_method_id ) {
+				$settings_mb = new GS_Metabox_Shipping_Method_Settings( 'Settings', pbci_gs_post_type() );
 
-					$sg_design = new SG_Design( $design_id );
+				if ( $settings_mb->get_option( $shipping_method_id, 'enabled' ) ) {
+					$applies = apply_filters( 'pbci_gs_check_condition', true, $shipping_method_id, $wpsc_cart );
+					if ( $applies ) {
+						$shipping_method_name = get_the_title( $shipping_method_id );
 
-					//$design_themes = wp_get_object_terms ( $design_id, 'bling_design_theme'  );
-					$design_themes = $sg_design->get_theme_term_list();
+						$cost = floatval( $settings_mb->get_option( $shipping_method_id, 'cost' ) );
 
-//					foreach ( $design_themes as $design_theme ) {
-//						if ( $design_theme->parent == 0 )
-//							continue;
-
-					//$design_theme_id = $design_theme->term_id;
-
-					$args = array(
-						'post_type' =>  pbci_gs_post_type(),
-						'fields'    => 'ids',
-						'meta_query' => array(
-							array(
-								'key'     => 'design-theme',
-								'value'   => array_keys( $design_themes ),
-								'compare' => 'IN',
-							),
-						),
-
-					);
-
-					$results = new WP_Query( $args );
-					foreach ( $results->posts as $group_ship_id ) {
-						$saved_start_date = get_post_meta($group_ship_id, 'start_date', true );
-						$saved_end_date = get_post_meta($group_ship_id, 'end_date', true );
-
-						try {
-							$datetime = new DateTime($saved_start_date);
-							$start_date = strtotime ($saved_start_date);// $datetime->getTimestamp();
-						} catch (Exception $e) {
-							bling_log( 'malformed start date or time: '. $saved_start_date);
+						if ( empty( $cost ) ) {
+							$cost = 0.00;
 						}
 
-						try {
-							$datetime = new DateTime($saved_end_date);
-							$end_date = strtotime($saved_end_date);//$datetime->getTimestamp();
-						} catch (Exception $e) {
-							bling_log( 'malformed start date or time: '. $saved_end_date);
-						}
-
-						$now = time();
-
-						if ( $now >= $start_date  && $now <= $end_date ) {
-							$group_ship_name = get_the_title( $group_ship_id );
-							$group_ship_cost = get_post_meta( $group_ship_id, 'cost', true );
-							$shipping_quotes[$group_ship_name] = $group_ship_cost;
-						}
+						$shipping_quotes[ $shipping_method_name ] = $cost;
 					}
 				}
-//				}
-			}
 		}
-
 
 		return $shipping_quotes;
 
@@ -268,21 +127,95 @@ class pbci_group_shipping {
 	 *
 	 *
 	 * @param unknown $cart_item (reference)
+	 *
 	 * @return unknown
 	 */
-	function get_item_shipping(&$cart_item) {
+	function get_item_shipping( &$cart_item ) {
 		return 0;
 	}
 
 }
 
-
+$methods = array();
 
 function pbci_group_shipping_add( $wpsc_shipping_modules ) {
-	$rates = new pbci_group_shipping();
-	$wpsc_shipping_modules[$rates->getInternalName()] = $rates;
+
+	$shipping_groups = get_option( 'pbcs_gs_shipping_groups', array() );
+
+	foreach ( $shipping_groups as $shipping_group => $shipping_ids ) {
+		$shipping = new pbci_group_shipping( $shipping_group );
+		$wpsc_shipping_modules[ $shipping->getInternalName() ] = $shipping;
+	}
 	return $wpsc_shipping_modules;
 }
 
+
+function pbci_gs_update_shipping_method_names( $post_id ) {
+
+	$post_type = get_post_type( $post_id );
+	if ( $post_type != pbci_gs_post_type() ) {
+		return;
+	}
+
+	$shipping_methods = array();
+
+	$ids     = pbci_gs_get_active_shipping_method_ids();
+
+	foreach ( $ids as $shipping_method_id ) {
+		$settings_mb = new GS_Metabox_Shipping_Method_Settings( 'Settings', pbci_gs_post_type() );
+		if ( $settings_mb->get_option( $shipping_method_id, 'enabled' ) ) {
+			$method_name = trim( $settings_mb->get_option( $shipping_method_id, 'group' ) );
+
+			if ( empty( $method_name ) ) {
+				$method_name = 'Delivery Options';
+			}
+
+			if ( ! isset( $shipping_methods[$method_name] ) ) {
+				$shipping_methods[$method_name] = array();
+			}
+
+			if ( ! in_array( $shipping_method_id, $shipping_methods[$method_name] ) ) {
+				$shipping_methods[ $method_name ][] = $shipping_method_id;
+			}
+		}
+	}
+
+	update_option( 'pbcs_gs_shipping_groups', $shipping_methods );
+}
+
+add_action( 'save_post', 'pbci_gs_update_shipping_method_names' );
+
 add_filter( 'wpsc_shipping_modules', 'pbci_group_shipping_add' );
 
+if ( ! is_admin() ) {
+	//add_action( 'wpsc_before_get_shipping_method', 'pbci_group_shipping_add_wrapper' );
+	//add_action( 'wpsc_after_get_shipping_method', 'pbci_group_shipping_remove_wrapper' );
+}
+
+
+function pbci_gs_get_active_shipping_method_ids() {
+	$args = array(
+		'post_type' => pbci_gs_post_type(),
+		'fields'    => 'ids',
+	);
+
+	$query = new WP_Query( $args );
+
+	return $query->posts;
+}
+
+add_filter( 'option_' . 'custom_shipping_options', 'pbci_gs_add_custom_options', 10 , 1 );
+
+function pbci_gs_add_custom_options( $option_value ) {
+	$shipping_methods = get_option( 'pbcs_gs_shipping_groups', array() );
+
+	foreach( $shipping_methods as $method => $method_ids ) {
+		$method_slug = sanitize_title( $method );
+		if ( ! in_array( $method_slug,$option_value  ) ) {
+			$option_value[] = $method_slug;
+		}
+	}
+
+	pbci_log( 'added special shipping options to enabled methodws list' );
+	return $option_value;
+}

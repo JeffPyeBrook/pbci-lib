@@ -38,7 +38,6 @@ class GS_Metabox_With_Keyword extends PBCI_MetaBox {
 		$keywords = $this->get_option( $id, 'keywords' );
 		$enabled  = $this->get_option( $id, 'enabled' ) == '1';
 
-
 		?>
 		<table class="widefat">
 			<tr>
@@ -73,3 +72,52 @@ function pbci_gs_setup_ship_mb_with_keywords() {
 }
 
 add_action( 'pbci_gs_setup_ship_mb', 'pbci_gs_setup_ship_mb_with_keywords', 5 , 0 );
+
+
+function pbci_gs_keyword_applies( $applies = false, $shipping_method_post_id = 0, $cart = false ) {
+
+	$shipping_method_post_id = absint( $shipping_method_post_id );
+	if ( empty( $shipping_method_post_id ) ) {
+		return $applies;
+	}
+
+	$mb = new GS_Metabox_With_Keyword( 'For Products With Keyword in Title',  pbci_gs_post_type() );
+	$enabled = $mb->get_option( $shipping_method_post_id, 'enabled' ) == '1';
+	if ( ! $enabled ) {
+		pbci_log( 'check not enabled for ' . $shipping_method_post_id );
+		return $applies;
+	}
+
+	if ( ! $applies ) {
+		pbci_log( 'check skipped, already does not apply for ' . $shipping_method_post_id );
+		return $applies;
+	}
+
+
+	if ( false === $cart ) {
+		$cart  = wpsc_get_cart();
+	}
+
+	$keywords = $mb->get_option( $shipping_method_post_id, 'keywords' );
+
+	$keywords = explode( "\r\n", $keywords );
+
+	if ( is_array ( $cart->cart_items ) && !empty( $cart->cart_items ) ) {
+		foreach ( $cart->cart_items as $cart_item ) {
+			$product_id = absint( $cart_item->product_id );
+			$title = get_the_title( $product_id );
+			foreach ( $keywords as $keyword ) {
+				if ( false !== stripos( $title, $keyword ) ) {
+					$applies = true;
+					break;
+				}
+			}
+		}
+	}
+
+	return $applies;
+
+}
+
+add_filter( 'pbci_gs_check_condition', 'pbci_gs_keyword_applies', 3, 10 );
+

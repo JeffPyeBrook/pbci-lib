@@ -66,3 +66,81 @@
 .ui-timepicker-rtl dl { text-align: right; padding: 0 5px 0 0; }
 .ui-timepicker-rtl dl dt{ float: right; clear: right; }
 .ui-timepicker-rtl dl dd { margin: 0 45% 10px 10px; }
+
+table div.rotated {
+	-webkit-transform: rotate(270deg);
+	-moz-transform: rotate(270deg);
+	writing-mode:tb-rl;
+	white-space: nowrap;
+}
+
+thead th {
+	vertical-align: top;
+}
+
+table .vertical {
+	white-space: nowrap;
+}
+
+
+.gs-admin-table th.xrotate {
+	/* Something you can count on */
+	height: 140px;
+	white-space: nowrap;
+	width: 10px;
+}
+
+.gs-admin-table th.xrotate > div {
+	transform:
+		/* Magic Numbers */
+	/*translate(25px, 51px)*/
+		/* 45 is really 360 - 45 */
+	rotate(80deg);
+	width: 80px;
+}
+
+.gs-admin-table th.xrotate > div > span {
+	border-bottom: 1px solid #ccc;
+	padding: 5px 10px;
+}
+
+
+.gs-admin-table tr:first-child,
+.gs-admin-table-left tr:first-child {
+	text-align: center;
+}
+
+.gs-admin-table tr th:first-child,
+.gs-admin-table tr td:first-child {
+	width:25%;
+}
+
+.gs-admin-table tr th:not( :first-child ),
+.gs-admin-table tr td:not( :first-child ) {
+	text-align: center;
+}
+
+
+table.gs tr.heading-row {
+	background-color: darkgray;
+}
+
+table.gs tr.heading-row th {
+	color: white;
+	font-weight: bold;
+}
+
+table.gs tr.heading-row th input {
+	vertical-align: bottom;
+}
+
+div.gs-action-buttons {
+	margin-top: 10px;
+}
+
+
+
+.ppi-mode-on {
+	color: transparent;
+	text-shadow : 0 0 0.9em rgba(0,0,0,0.8);
+}

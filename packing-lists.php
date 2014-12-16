@@ -83,13 +83,43 @@ function pbci_gs_get_purchase_statii() {
 	return $statti;
 }
 
+function pbci_gs_get_status_id( $status_name ) {
+	$id = -1;
+	global $wpsc_purchlog_statuses;
+
+	foreach( $wpsc_purchlog_statuses as $index => $info ) {
+		if ( $info['label'] == $status_name ) {
+			$id = absint( $info['order'] );
+			break;
+		}
+	}
+
+	return $id;
+}
+
+
+function pbci_gs_get_status_name( $status_id ) {
+	$label = '';
+	global $wpsc_purchlog_statuses;
+
+	foreach( $wpsc_purchlog_statuses as $index => $info ) {
+		if ( $info['order'] == $status_id ) {
+			$label = $info['label'];
+			break;
+		}
+	}
+
+	return $label;
+}
+
+
 function pbci_gs_init_purchase_status_counts() {
 	global $wpsc_purchlog_statuses;
 
-	$statti = array('Shipped'=> 0);
+	$list = pbci_gs_status_list();
 
-	foreach( $wpsc_purchlog_statuses as $index => $info ) {
-		$statti[$info['label']] = 0;
+	foreach( $list as $id ) {
+		$statti[ pbci_gs_get_status_name( $id ) ] = 0;
 	}
 
 	return $statti;
@@ -153,12 +183,12 @@ function pbci_gs_get_purchases_summary_table() {
 	}
 
 	?>
-	<h3><?php echo pbci_gs_module_name();?></h3>
-	<table class="group-shipping-summary">
-	<tr>
-	<th>Group Ship</th>
+	<h3>All Purchases Summary</h3>
+	<table class="widefat gs-summary gs-admin-table gs">
+	<tr class="heading-row">
+	<th>Shipping Option</th>
 		<?php  foreach ( $statii as $statum => $count ) { ?>
-			<th><?php echo $statum;?></th>
+			<th class="rotate"><div><span><?php echo $statum;?></span></div></th>
 		<?php } ?>
 	</tr>
 
@@ -179,10 +209,10 @@ function pbci_gs_get_purchases_summary_table() {
 
 	<hr>
 
-	<h3><?php echo pbci_gs_module_name();?> Item Summary</h3>
-	<table class="group-shipping-summary">
-	<tr>
-	<th>Group Ship</th>
+	<h3>All Purchases Item Summary</h3>
+	<table class="widefat gs-summary gs-admin-table gs">
+	<tr class="heading-row">
+	<th>Shipping Option</th>
 		<?php  foreach ( $statii as $statum => $count ) { ?>
 			<th><?php echo $statum;?></th>
 		<?php } ?>
@@ -195,7 +225,11 @@ function pbci_gs_get_purchases_summary_table() {
 			<?php $url = '?page=' . $_REQUEST['page'] . '&' . 'post_type=' . $_REQUEST['post_type'] . '&' . 'gs=' . urlencode($group_ship); ?>
 			<td><a href="<?php echo $url;?>"><?php echo $group_ship;?></a></td>
 			<?php  foreach ( $statii as $statum => $count ) { ?>
-				<td><?php echo isset( $summary[$statum] ) ? $summary[$statum] : '';?></td>
+				<td>
+					<?php if (  ! empty ( $summary[$statum] ) ) { ?>
+						<a href="<?php echo $url . '&statum=' . pbci_gs_get_status_id( $statum );?>" > <?php echo urlencode( $summary[$statum] );?></a>
+					<?php } ?>
+				</td>
 			<?php } ?>
 		</tr>
 		<?php

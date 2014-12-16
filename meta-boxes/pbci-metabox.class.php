@@ -42,11 +42,15 @@ abstract class PBCI_MetaBox {
 		return '_mb_' . get_class($this);
 	}
 
-	protected function option_element_name( $option_name ) {
-		echo $this->meta_key_name() . '[' . $option_name . ']';
+	protected function option_element_name( $option_name, $echo = true ) {
+		if ( $echo ) {
+			echo $this->meta_key_name() . '[' . $option_name . ']';
+		} else {
+			return $this->meta_key_name() . '[' . $option_name . ']';
+		}
 	}
 
-	protected function get_option( $id, $option_name ) {
+	function get_option( $id, $option_name ) {
 		$options = $this->get_options( $id );
 
 		return isset( $options[$option_name] ) ? $options[$option_name] : '';

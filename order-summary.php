@@ -25,6 +25,54 @@ if ( defined( 'DOING_AJAX' ) && DOING_AJAX && ( isset( $_REQUEST['action'] ) && 
 	add_action( 'wp_ajax_nopriv_packing_list'		, 'packing_list_wrapper' );
 }
 
+function pbci_gs_exclude_status_string() {
+	$exclude_status_list = array( WPSC_Purchase_Log::INCOMPLETE_SALE, WPSC_Purchase_log::PAYMENT_DECLINED, WPSC_PURCHASE_LOG::REFUNDED, WPSC_Purchase_Log::REFUND_PENDING,  );
+	$exclude_status_string = implode( ',' , $exclude_status_list );
+	return $exclude_status_string;
+}
+
+function pbci_gs_status_list() {
+	$status_list = array(
+		WPSC_Purchase_Log::ACCEPTED_PAYMENT,
+		WPSC_Purchase_Log::CLOSED_ORDER,
+		WPSC_Purchase_Log::ORDER_RECEIVED,
+		WPSC_Purchase_Log::INCOMPLETE_SALE,
+		WPSC_Purchase_log::PAYMENT_DECLINED,
+		WPSC_PURCHASE_LOG::REFUNDED,
+		WPSC_Purchase_Log::REFUND_PENDING,
+		);
+
+	return $status_list;
+}
+
+
+function pbci_gs_purchase_log_save_tracking_id($purchase_log_id, $track_id ) {
+	global $wpdb;
+
+	$result = $wpdb->update(
+		WPSC_TABLE_PURCHASE_LOGS,
+		array(
+			'track_id' => $track_id
+		),
+		array(
+			'id' => $purchase_log_id
+		),
+		'%s',
+		'%d'
+	);
+
+	if ( ! $result )
+		return new WP_Error( 'wpsc_cannot_save_tracking_id', __( "Couldn't save tracking ID of the transaction. Please try again.", 'wpsc' ) );
+
+	$return = array(
+		'rows_affected' => $result,
+		'id'            => $_POST['log_id'],
+		'track_id'      => $_POST['value'],
+	);
+
+	return $return;
+}
+
 
 function packing_list_wrapper( ) {
 
@@ -66,26 +114,50 @@ function packing_list_wrapper( ) {
 }
 
 function pbci_gs_get_purchases_table( $group_ship ) {
+
+	if ( isset( $_REQUEST['gs-mark-as-closed'] ) && ! empty( $_REQUEST['gs-order-ids'] ) ) {
+		$purchase_log_ids = array_map( 'intval', $_REQUEST['gs-order-ids'] );
+		$tracking_id_to_set = isset( $_REQUEST['gs-tracking-ref'] ) ? $_REQUEST['gs-tracking-ref'] : false;
+		foreach ( $purchase_log_ids as $purchase_log_id ) {
+			wpsc_purchlog_edit_status( $purchase_log_id, WPSC_Purchase_Log::CLOSED_ORDER  );
+			if ( $tracking_id_to_set !== false ) {
+				pbci_gs_purchase_log_save_tracking_id( $purchase_log_id, $tracking_id_to_set );
+			}
+		}
+	}
+
 	$url = '?page=' . $_REQUEST['page'] ;
 
+	if ( isset( $_REQUEST['statum'] ) ) {
+		$statum_clause = ' AND processed=' . $_REQUEST['statum'] . ' ';
+		$status_name = pbci_gs_get_status_name( $_REQUEST['statum'] );
+	} else {
+		$statum_clause = '';
+		$status_name = '';
+	}
 
 	global $wpdb;
-	$sql = 'SELECT id FROM ' . WPSC_TABLE_PURCHASE_LOGS . ' WHERE (shipping_option = "' . $group_ship . '" ) AND ((track_id IS NULL) OR (track_id = "")) AND (processed NOT IN (' . pbci_wf_exlude_status_string() . ') ) ORDER BY ID' ;
-	bling_log( $sql );
+	$sql = 'SELECT id FROM ' . WPSC_TABLE_PURCHASE_LOGS
+	        . ' WHERE (shipping_option = "' . $group_ship . '" ) '
+	            . $statum_clause
+					. ' AND (processed NOT IN (' . pbci_gs_exclude_status_string() . ') ) '
+						. ' ORDER BY ID' ;
+
 	$purchase_log_ids = $wpdb->get_col( $sql , 0 );
 
 	$count = 0;
 	?>
-	<h2>Order Status for <?php echo $group_ship;?></h2>
+	<h2><?php echo $status_name;?> Status for Shipping Option <?php echo $group_ship;?></h2>
 
 	<a class="back-link" href="<?php echo $url;?>" title="back">&larr;Back</a>&nbsp;
 	<a id="<?php echo urlencode($group_ship);?>" href="#" class="print-packing-list-popup print-link">Print</a>
 
 	<hr>
-	<table  class="widefat group-ship group-ship-order-status">
-		<tr>
+	<form method="post">
+	<table  class="widefat gs gs-order-status gs-admin-table-left">
+		<tr class="heading-row">
 			<th>
-				Order ID
+				<input id="all-order-ids" type="checkbox" name="all-order-ids" value="1">&nbsp;Order&nbsp;ID
 			</th>
 
 			<th>
@@ -103,6 +175,10 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 			<th>
 				Status
 			</th>
+			<th>
+				Track Ref.
+			</th>
+
 		</tr>
 	<?php
 	foreach ($purchase_log_ids as $purchase_log_id ) {
@@ -116,17 +192,25 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 
 		?>
 		<tr>
-			<td><?php pbci_gs_sales_log_link( $purchase_log_id );?></td>
-			<td><?php echo date_i18n('M d, Y',$purchase_log->get( 'date' ));?></td>
-			<td><?php echo ucwords($lastname . ', ' . $firstname);?></td>
-			<td><?php echo count($cart_contents);?></td>
-			<td><?php echo pbci_gs_get_purchase_order_status( $purchase_log );?></td>
+			<td class="gs-order-id"><input  class="gs-order-id-checkbox" type="checkbox" name="gs-order-ids[]" value="<?php echo $purchase_log_id;?>">&nbsp;<?php pbci_gs_sales_log_link( $purchase_log_id );?></td>
+			<td class="gs-date"><?php echo date_i18n('M d, Y',$purchase_log->get( 'date' ));?></td>
+			<td class="gs-name"><span class="ppi"><?php echo ucwords($lastname . ', ' . $firstname);?></span></td>
+			<td class="gs-item-count"><?php echo count($cart_contents);?></td>
+			<td class="gs-status"><?php echo pbci_gs_get_purchase_order_status( $purchase_log );?></td>
+			<td class="gs-track-id"><?php echo $purchase_log->get( 'track_id' );?></td>
 			</tr>
 		<?php
 	}
 
 	?>
 	</table>
+
+	<div class="gs-action-buttons">
+		<label for="gs-tracking-ref">Tracking Ref:</label>&nbsp;<input type="text" id="gs-tracking-ref" name="gs-tracking-ref" size="30">
+		<?php submit_button( 'Mark As Closed', 'primary', 'gs-mark-as-closed', false ); ?>
+	</div>
+
+	</form>
 
 	<?php
 		$count = 0;
@@ -162,11 +246,11 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 
 	<hr>
 	<div class="page-break"></div>
-	<h3>Product Details</h3>
-	<table  class="widefat group-ship group-ship-product-list">
-		<tr>
+	<h3>Purchases Product Details</h3>
+	<table  class="widefat gs gs-product-list gs-admin-table-left">
+		<tr class="heading-row">
 			<th>
-				Order ID
+				Order&nbsp;ID
 			</th>
 
 			<th>
@@ -204,7 +288,7 @@ function pbci_gs_get_purchases_table( $group_ship ) {
 			<tr>
 				<td><?php pbci_gs_sales_log_link( $purchase_log_id );?></td>
 				<td><?php echo $cart_item->quantity;?></td>
-				<td><?php echo ucwords($lastname . ', ' . $firstname);?></td>
+				<td><span class="ppi"><?php echo ucwords($lastname . ', ' . $firstname);?></span></td>
 				<td>
 					<?php echo esc_html( $cart_item->name );?>
 					<?php
@@ -454,10 +538,6 @@ function pbci_gs_cart_item_custom_message( $cart_item_id ) {
 		if ( !empty ( $pbci_options_msg ) && strlen ( $pbci_options_msg ) > 0 ) {
 			$custom_message .= ('<br>Archived Message: '. $pbci_options_msg );
 		}
-	}
-
-	if ( empty($custom_message) && !empty($cart_item->custom_message) ) {
-		$custom_message = $cart_item->custom_message;
 	}
 
 	return $custom_message;

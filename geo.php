@@ -27,8 +27,7 @@
 
 function get_latlong( $address ) {
 	$gocode_api_url = 'https://maps.googleapis.com/maps/api/geocode/json?address=';
-	$distance_matrix_api_url = 'https://maps.googleapis.com/maps/api/distancematrix/json?';
-	$api_key= 'AIzaSyCdqEJO9s8pvNbo8WmB3FYF-EPq2rcUNms';
+	$api_key= get_option( 'pbci-gs-google-api-key', 'AIzaSyCdqEJO9s8pvNbo8WmB3FYF-EPq2rcUNms' );
 
 	$address = str_replace( "\r\n", ',', $address );
 	$address = str_replace( ' ', '+', $address );
@@ -53,9 +52,8 @@ function get_latlong( $address ) {
 }
 
 function pbci_gs_get_distance_from_store_base( $to,  $units = 'metric', $from = '' ) {
-	$gocode_api_url = 'https://maps.googleapis.com/maps/api/geocode/json?address=';
 	$distance_matrix_api_url = 'https://maps.googleapis.com/maps/api/distancematrix/json?';
-	$api_key= 'AIzaSyCdqEJO9s8pvNbo8WmB3FYF-EPq2rcUNms';
+	$api_key= get_option( 'pbci-gs-google-api-key', 'AIzaSyCdqEJO9s8pvNbo8WmB3FYF-EPq2rcUNms' );
 
 	if ( empty( $from ) ) {
 		$from = pbci_gs_store_base_address();

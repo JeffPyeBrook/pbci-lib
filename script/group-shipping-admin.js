@@ -61,10 +61,30 @@ jQuery(document).ready(function(){
 		 var src = sw.ajaxurl +'?action=packing_list&group_ship='+group_ship+'&_ajax_nonce='+sw.nonce;
 		 window.open( src, '_blank', "scrollbars=yes,resizable=yes,width=800,height=500");
 	}
-	
-	
-	
+
+	jQuery( '#all-order-ids').click( function() {
+		var checked = jQuery( this ).is( ":checked" );
+		jQuery( ".gs-order-id-checkbox" ).prop( 'checked', checked );
+	});
+
+
 
 });
-	
+
+var ppiMode = false;
+
+jQuery(document).ready(function($) {
+
+	jQuery( 'div.wrap > h2').click( function() {
+		if ( ! ppiMode ) {
+			ppiMode = true;
+			jQuery('.ppi').addClass( 'ppi-mode-on' );
+		} else {
+			ppiMode = false;
+			jQuery('.ppi').removeClass( 'ppi-mode-on' );
+		}
+	});
+
+});
+
 

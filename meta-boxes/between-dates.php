@@ -117,16 +117,39 @@ function pbci_gs_setup_ship_mb_between_dates() {
 add_action( 'pbci_gs_setup_ship_mb', 'pbci_gs_setup_ship_mb_between_dates', 5 , 0 );
 
 
-function pbci_gs_between_dates_applies( $shipping_method_post_id, $cart = false ) {
-	$result = false;
+function pbci_gs_between_dates_applies( $applies = false, $shipping_method_post_id = 0, $cart = false ) {
+
+	if ( empty( $shipping_method_post_id ) ) {
+		return $applies;
+	}
+
+	$mb = new GS_Metabox_Between_Dates( 'Available Between Dates',  pbci_gs_post_type() );
+	$enabled = $mb->get_option( $shipping_method_post_id, 'enabled' ) == '1';
+	if ( ! $enabled ) {
+		pbci_log( 'check not enabled for ' . $shipping_method_post_id );
+		return $applies;
+	}
+
+	if ( ! $applies ) {
+		pbci_log( 'check skipped, already does not apply for ' . $shipping_method_post_id );
+		return $applies;
+	}
+
+	$shipping_method_post_id = absint( $shipping_method_post_id );
+
+	$enabled = $mb->get_option( $shipping_method_post_id, 'enabled' ) == '1';
+	if ( ! $enabled ) {
+		pbci_log( 'check not enabled for ' . $shipping_method_post_id );
+		return $applies;
+	}
 
 	if ( false === $cart ) {
 		$cart  = wpsc_get_cart();
 	}
 
-	$saved_start_date = $this->get_option( $shipping_method_post_id, 'start_date' );
-	$saved_end_date   = $this->get_option( $shipping_method_post_id, 'end_date', true );
-	$enabled          = $this->get_option( $shipping_method_post_id, 'enabled' ) == '1';
+	$saved_start_date = $mb->get_option( $shipping_method_post_id, 'start_date' );
+	$saved_end_date   = $mb->get_option( $shipping_method_post_id, 'end_date', true );
+	$enabled          = $mb->get_option( $shipping_method_post_id, 'enabled' ) == '1';
 
 	if ( $enabled ) {
 
@@ -148,13 +171,14 @@ function pbci_gs_between_dates_applies( $shipping_method_post_id, $cart = false 
 
 		$now = time();
 
-		if ( $now >= $start_date  && $now <= $end_date ) {
-			$result = true;
+		if ( ! ( $now >= $start_date  && $now <= $end_date ) ) {
+			$applies = false;
 		}
 	}
 
-	return result;
+	return $applies;
 
 }
 
-add_filter( 'pbci_gs_')
+add_filter( 'pbci_gs_check_condition', 'pbci_gs_between_dates_applies', 3, 10 );
+

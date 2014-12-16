@@ -40,54 +40,31 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'wpec-hooks.php' ) ) {
 	include_once( plugin_dir_path( __FILE__ ) . 'wpec-hooks.php' );
 }
 
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/pbci-metabox.class.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/pbci-metabox.class.php' );
-}
-
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/shipping-cost.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/shipping-cost.php' );
-}
-
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-dates.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-dates.php' );
-}
-
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-times.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/between-times.php' );
-}
-
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/within-distance.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/within-distance.php' );
-}
-
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/with-keyword.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/with-keyword.php' );
-}
-
-if ( file_exists( plugin_dir_path( __FILE__ ) . 'meta-boxes/filters.php' ) ) {
-	include_once( plugin_dir_path( __FILE__ ) . 'meta-boxes/filters.php' );
-}
-
-if ( is_admin() ) {
-	do_action( 'pbci_gs_setup_ship_mb' );
-}
 
 function pbci_group_shipping_admin_init() {
+
+	$timestamp = filemtime( plugin_dir_path( __FILE__ ) . 'script/admin.css' );
+	wp_register_style( 'gs-admin-style', plugin_dir_url( __FILE__ ) . 'script/admin.css', false, $timestamp );
+	wp_enqueue_style( 'gs-admin-style' );
+
+	wp_register_script( 'group-ship-admin', plugins_url( 'script/group-shipping-admin.js', __FILE__ ), array(), false, false );
+	wp_localize_script( 'group-ship-admin', 'myAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+	wp_enqueue_script( 'group-ship-admin' );
 
 	wp_register_script( 'group-ship-admin', plugins_url( 'script/group-shipping-admin.js', __FILE__ ), array(), false, false );
 	wp_localize_script( 'group-ship-admin', 'myAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 	wp_enqueue_script( 'group-ship-admin' );
 
 
-	wp_register_script(
-		'gs-datetimepicker',
-		plugins_url( 'script/datetimepicker.js', __FILE__ ),
-		array( 'jquery', 'jquery-ui-datepicker' ),
-		false,
-		false
-	);
-
-	wp_enqueue_script( 'gs-datetimepicker' );
+//	wp_register_script(
+//		'gs-datetimepicker',
+//		plugins_url( 'script/datetimepicker.js', __FILE__ ),
+//		array( 'jquery', 'jquery-ui-datepicker' ),
+//		false,
+//		false
+//	);
+//
+//	wp_enqueue_script( 'gs-datetimepicker' );
 
 	wp_register_script(
 		'jquery-ui-timepicker-addon',
@@ -100,6 +77,10 @@ function pbci_group_shipping_admin_init() {
 	wp_enqueue_script( 'jquery-ui-timepicker-addon' );
 
 	add_submenu_page( 'edit.php?post_type=group-shipping', 'Packing Lists', 'Packing Lists', 'edit_posts', 'pbci_gs_packing_list', 'pbci_gs_packing_list' );
+
+	$admin_capability = apply_filters( 'wpsc_purchase_logs_cap', 'administrator' );
+	add_submenu_page( 'index.php', __( 'Delivery Pro' ), __(  'Delivery Pro', 'wpsc' ), $admin_capability, 'pbci_gs_packing_list', 'pbci_gs_packing_list' );
+
 
 }
 
@@ -193,3 +174,4 @@ function pbci_gs_mb_settings( $post ) {
 
 <?php
 }
+
