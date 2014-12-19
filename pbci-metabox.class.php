@@ -99,7 +99,7 @@ if ( ! class_exists( 'PBCI_MetaBox' ) ) {
 				$this->meta_box_title,
 				array( &$this, 'do_metabox' ),
 				$this->post_type,
-				'normal',
+				'advanced',
 				'high'
 			);
 		}
