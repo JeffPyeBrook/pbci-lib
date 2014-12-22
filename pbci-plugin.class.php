@@ -37,6 +37,11 @@ class pbciPlugin {
 
 	private $_license_code = '';
 
+	private $_settings_page_url = '';
+
+	private $_plugin_data = null;
+	private $_plugin_name = '';
+
 	public function __construct() {
 	}
 
@@ -76,6 +81,30 @@ class pbciPlugin {
 		add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
 
 		add_action( $this->_plugin_slug . '_settings', array( &$this, 'register_my_plugin' ), 1, 0 );
+
+
+		$this->_settings_page_link = '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">Settings</a>';
+	}
+
+	function plugin_settings_link() {
+		return '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">' . $this->plugin_name() . ' Settings</a>';
+	}
+
+	function plugin_data() {
+		if ( empty( $this->_plugin_data ) ) {
+			$this->_plugin_data = get_plugin_data( $this->_plugin_file, false, false );
+		}
+
+		return $this->_plugin_data;
+	}
+
+	function plugin_name() {
+		if ( empty( $this->_plugin_name ) ) {
+			$data               = $this->plugin_data();
+			$this->_plugin_name = $data['Name'];
+		}
+
+		return $this->_plugin_name ;
 	}
 
 	function admin_menus() {
@@ -92,9 +121,7 @@ class pbciPlugin {
 
 	// Add settings link on plugin page
 	function settings_links( $links ) {
-		$settings_link = '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">Settings</a>';
-		array_unshift( $links, $settings_link );
-
+		array_unshift( $links, $this->_settings_page_link );
 		return $links;
 	}
 
@@ -134,7 +161,7 @@ class pbciPlugin {
 	}
 
 	function settings_title() {
-		return 'Settings';
+		return $this->plugin_name() . ' Settings';
 	}
 
 	private function get_update_path() {
@@ -165,7 +192,7 @@ class pbciPlugin {
 		if ( ! is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) === 200 ) {
 			$response = maybe_unserialize( $response ['body'] );
 			if ( isset( $response['message'] ) ) {
-				pbci_admin_nag( $response['message'] );
+				pbci_admin_nag( $response['message'] . '<br>' . $this->plugin_settings_link() );
 			}
 
 			return $response;
@@ -217,6 +244,8 @@ class pbciPlugin {
 		}
 
 		$key = $this->license_code();
+
+		pbci_admin_nag( $this->plugin_settings_link()  . '<br>' . 'test'  );
 		?>
 		<style>
 			table.widefat tr:first-child th {
