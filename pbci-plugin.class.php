@@ -136,8 +136,9 @@ class pbciPlugin {
 			<h2><?php echo $this->settings_title(); ?></h2>
 		<?php
 
-		ob_start();
 		do_action( $this->_plugin_slug . '_settings' );
+
+		ob_start();
 		$this->settings();
 		$buffer = ob_get_clean();
 		if ( ! empty( $buffer ) ) {
@@ -244,8 +245,6 @@ class pbciPlugin {
 		}
 
 		$key = $this->license_code();
-
-		pbci_admin_nag( $this->plugin_settings_link()  . '<br>' . 'test'  );
 		?>
 		<style>
 			table.widefat tr:first-child th {
@@ -318,7 +317,9 @@ class pbciPlugin {
 				<tr>
 					<td colspan="2">
 						<?php if ( empty( $key ) ) { ?>
-								<?php echo submit_button( 'Register', 'primary', 'register' ); ?>
+							<form method="post">
+									<?php echo submit_button( 'Register', 'primary', 'register' ); ?>
+							</form>
 						<?php } else { ?>
 								For support, or to get any of our other WP-eCommerce plugins, please visit <a href="http://www.pyebrook.com">http://www.pyebrook.com</a>.
 						<?php } ?>
