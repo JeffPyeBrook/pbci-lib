@@ -26,9 +26,26 @@ if ( ! class_exists( 'PbciLog' ) ) {
 
 	class pbciLog {
 
+		private static $instance = null;
+
 		protected $_log_file_dir = false;
 		protected $_log_file = false;
 		protected $_slug = false;
+
+		/**
+		 * Creates or returns an instance of this class.
+		 *
+		 * @return  Foo A single instance of this class.
+		 */
+		public static function get_instance() {
+
+			if ( null == self::$instance ) {
+				self::$instance = new self;
+			}
+
+			return self::$instance;
+
+		} // end get_instance;
 
 		function __construct( $slug = 'pbci', $log_file_dir_or_file = '' ) {
 			$this->_slug = $slug;
@@ -219,6 +236,7 @@ if ( ! class_exists( 'PbciLog' ) ) {
 	}
 
 	function pbci_log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
-		PbciLog::log( $text );
+		$_logger = pbciLog::get_instance();
+		$_logger->log( $text );
 	}
 }
