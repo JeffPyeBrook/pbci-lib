@@ -58,6 +58,10 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			return $this->_license_code;
 		}
 
+		public function get_plugin_slug() {
+			return $this->_plugin_slug;
+		}
+
 		public function init( $file ) {
 			error_log( __CLASS__ . '::' . __FUNCTION__ );
 			$this->_plugin_file = $file;
@@ -137,9 +141,10 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			<h2><?php echo $this->settings_title(); ?></h2>
 			<?php
 
+			do_action( 'before_' . $this->_plugin_slug . '_settings' );
 			do_action( $this->_plugin_slug . '_settings' );
 
-		ob_start();
+			ob_start();
 			$this->settings();
 			$buffer = ob_get_clean();
 			if ( ! empty( $buffer ) ) {
@@ -155,6 +160,7 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			}
 
 			?></div><?php
+			do_action( 'after_' . $this->_plugin_slug . '_settings' );
 
 		}
 
