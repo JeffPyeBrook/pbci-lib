@@ -24,25 +24,70 @@
 **
 */
 
-if ( ! class_exists( 'pbciPlugin' ) ) {
-	class pbciPlugin {
+if ( ! class_exists( 'pbciPluginV2' ) ) {
+	class pbciPluginV2 {
 
 		private $_plugin_slug;
 		private $_plugin_file;
-
 		private $_plugster = null;
 		private $_logster = null;
-
 		private $_logging_enabled = false;
-
 		private $_license_code = '';
-
 		private $_settings_page_url = '';
-
 		private $_plugin_data = null;
 		private $_plugin_name = '';
 
 		public function __construct() {
+		}
+
+
+		function get_plugin_data() {
+			$default_headers = array(
+				'Name' => 'Plugin Name',
+				'PluginURI' => 'Plugin URI',
+				'Version' => 'Version',
+				'Description' => 'Description',
+				'Author' => 'Author',
+				'AuthorURI' => 'Author URI',
+				'TextDomain' => 'Text Domain',
+				'DomainPath' => 'Domain Path',
+				'Network' => 'Network',
+				// Site Wide Only is deprecated in favor of Network.
+				'_sitewide' => 'Site Wide Only',
+			);
+
+			$plugin_data = get_file_data( $this->_plugin_file, $default_headers, 'plugin' );
+
+			foreach( $plugin_data as $key => $value ) {
+				if ( empty( $value ) ) {
+					unset( $plugin_data[$key ] );
+				}
+			}
+
+			return $plugin_data;
+
+		}
+		function get_plugin_information( $plugin_information_array ) {
+
+			$my_info = array( );
+
+			$my_info = $this->get_plugin_data();
+
+			$my_info[ 'plugin_slug' ]  = $this->_plugin_slug;
+			$my_info[ 'plugin_file' ]  = $this->_plugin_file;
+			$my_info[ 'license_code' ] = $this->license_code();
+
+			$my_info[ 'WordPress Version' ] =  get_bloginfo( 'version' );
+			$my_info[ 'WP-eCommerce Version' ] = WPSC_VERSION;
+			$my_info[ 'WP-eCommerce Database Version' ] = WPSC_DB_VERSION;
+			$my_info[ 'license_code' ] = $this->license_code();
+
+			$my_info[ 'admin_email' ] =  get_bloginfo( 'admin_email' );
+			$my_info[ 'wpurl' ] =  get_bloginfo( 'wpurl' );
+
+			$plugin_information_array[ $my_info['Name'] . ' ' . $my_info['Version'] ] = $my_info;
+
+			return $plugin_information_array;
 		}
 
 		function license_code( $new_code = '' ) {
@@ -63,10 +108,9 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 		}
 
 		public function init( $file ) {
-			error_log( __CLASS__ . '::' . __FUNCTION__ );
+
 			$this->_plugin_file = $file;
 			$this->_plugin_slug = basename( dirname( $file ) );
-			error_log( $this->_plugin_slug );
 
 			if ( is_admin() && class_exists( 'PBCIAutoUpdate' ) ) {
 				$this->_plugster = new PBCIAutoUpdate( $file );
@@ -74,8 +118,13 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 				$this->_plugster = false;
 			}
 
-			if ( class_exists( 'pbciLog' ) ) {
-				$this->_logster = new pbciLog( $this->_plugin_slug, dirname( $this->_plugin_file ) );
+			if ( class_exists( 'pbciLogV2' ) ) {
+				if ( method_exists ( 'pbciLogV2', 'get_instance' ) ) {
+					$this->_logster = pbciLogV2::get_instance();
+				} else {
+					// backwards compatibility
+					$this->_logster = new pbciLog( $this->_plugin_slug, dirname( $this->_plugin_file ) );
+				}
 			}
 
 			$plugin = plugin_basename( $this->_plugin_file );
@@ -85,9 +134,31 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
 
 			add_action( $this->_plugin_slug . '_settings', array( &$this, 'register_my_plugin' ), 1, 0 );
-
+			add_action( $this->_plugin_slug . '_settings', array( &$this, 'core_settings' ), 2, 0 );
 
 			$this->_settings_page_link = '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">Settings</a>';
+
+			$this->log( $this->_plugin_slug );
+
+			add_filter( 'pbci_get_plugin_information', array( &$this, 'get_plugin_information' ), 10, 1 );
+
+			add_filter( 'pbci_validate_license_key', array( &$this, 'validate_license_key' ), 10, 2 );
+
+		}
+
+		static function is_license_key_valid( $key ) {
+			$valid = false;
+			$valid = apply_filters( 'pbci_validate_license_key', $valid, $key );
+			return $valid;
+		}
+
+		function validate_license_key( $valid, $key ) {
+
+			if ( $key == $this->license_code() ) {
+				$valid = true;
+			}
+
+			return $valid;
 		}
 
 		function plugin_settings_link() {
@@ -130,6 +201,86 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			return $links;
 		}
 
+		function core_settings() {
+			if ( isset( $_POST [ 'settings']['pbci_logging_is_enabled'] ) ) {
+				pbciLog::set_logging_enabled( $_POST [ 'settings']['pbci_logging_is_enabled'] );
+			}
+			?>
+			<table class="widefat support-settings">
+
+				<tr>
+					<th colspan="2">
+						Support Settings
+					</th>
+				</tr>
+
+				<tr>
+					<td>
+						<?php $this->echo_settings_checkbox( 'pbci_logging_is_enabled', false ) ?> Enable Logging
+					</td>
+					<td>
+						Only enable logging if you are trying to diagnose an issue.  Enabling logging makes the log file
+						visible at the link shown below. This is useful if you or a person helping you remotely needs to
+						see what is happening "under the hood".
+					</td>
+				</tr>
+
+				<tr>
+					<td>
+						Log File Link:
+					</td>
+					<td>
+						<?php if ( ! empty( $this->_logster ) ) {
+							echo '<a href="' . $this->_logster->get_log_file_url() . '">' . $this->_logster->get_log_file_url() . '</a>';
+						} ?>
+					</td>
+				</tr>
+
+				<tr>
+					<td>
+						WordPress Version:
+					</td>
+					<td>
+						<?php echo get_bloginfo( 'version' );?>
+					</td>
+				</tr>
+
+				<tr>
+					<td>
+						WP-eCommerce Version:
+					</td>
+					<td>
+						<?php echo WPSC_VERSION;?>
+					</td>
+				</tr>
+
+				<tr>
+					<td>
+						WP-eCommerce Database Version:
+					</td>
+					<td>
+						<?php echo WPSC_DB_VERSION;?>
+					</td>
+				</tr>
+
+
+				<?php $this->echo_save_settings_row(); ?>
+
+			</table>
+		<?php
+
+		}
+
+		function echo_save_settings_row() {
+			?>
+			<tr>
+				<td colspan="0">
+				<?php echo submit_button( 'Save', 'primary', 'save-settings', false ); ?>
+				</td>
+			</tr>
+			<?php
+		}
+
 		function settings_page() {
 
 			if ( isset( $_POST['save-settings'] ) && isset( $_POST['settings'] ) ) {
@@ -142,9 +293,9 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			<?php
 
 			do_action( 'before_' . $this->_plugin_slug . '_settings' );
-			do_action( $this->_plugin_slug . '_settings' );
 
 			ob_start();
+			$this->collect_settings();
 			$this->settings();
 			$buffer = ob_get_clean();
 			if ( ! empty( $buffer ) ) {
@@ -153,7 +304,6 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 					<div style="clear:both;">
 						<?php echo $buffer; ?>
 					</div>
-					<?php submit_button( 'Save', 'primary', 'save-settings' ); ?>
 				</form>
 
 			<?php
@@ -164,16 +314,37 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 
 		}
 
-		function settings() {
-
+		function collect_settings() {
+			ob_start();
+			do_action( $this->_plugin_slug . '_settings' );
+			$contents = ob_get_clean();
+			echo $contents;
 		}
 
 		function settings_title() {
 			return $this->plugin_name() . ' Settings';
 		}
 
+		function are_we_testing() {
+			$we_are_testing = false;
+
+			if ( false !== strpos( $_SERVER['HTTP_HOST'], '.local' ) ) {
+				$we_are_testing = true;
+			}
+
+			if ( false !== strpos( $_SERVER['SERVER_ADDR'], '192.168.1.' ) ) {
+				$we_are_testing = true;
+			}
+
+			if ( false !== strpos( $_SERVER['SERVER_ADDR'], '127.0.0.1' ) ) {
+				$we_are_testing = true;
+			}
+
+			return $we_are_testing;
+		}
+
 		private function get_update_path() {
-			if ( true || $this->testing ) {
+			if ( $this->are_we_testing() ) {
 				$this->update_path = 'http://' . 'pyebrook.local' . '/wp-content/plugins/auto-update/update.php';
 			} else {
 				$this->update_path = 'http://' . get_option( 'pbci_update_domain', 'www.pyebrook.com' ) . '/wp-content/plugins/auto-update/update.php';
@@ -183,7 +354,7 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 		}
 
 		public function register_this_plugin() {
-			$plugin_data = get_plugin_data( $this->_plugin_file, false, false );
+			$plugin_data = $this->get_plugin_data();
 
 			$body            = $plugin_data;
 			$body ['action'] = 'license';
@@ -194,9 +365,16 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			$body ['site_wp_version']  = get_bloginfo( 'version' );
 			$body ['site_url']         = parse_url( site_url(), PHP_URL_HOST );
 
-			$cookies[] = new WP_Http_Cookie( array( 'name' => 'XDEBUG_SESSION', 'value' => 'PHPSTORM' ) );
+			if ( $this->are_we_testing() ) {
+				$cookies = array();
+				$cookies[] = new WP_Http_Cookie( array( 'name' => 'XDEBUG_SESSION', 'value' => 'PHPSTORM' ) );
+			} else {
+				$cookies = array();
+			}
+
 			$url       = $this->get_update_path();
-			$response  = wp_remote_post( $url, array( 'body' => $body, ) );
+			$response  = wp_remote_post( $url, array( 'body' => $body, 'cookies' => $cookies, ) );
+
 			if ( ! is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) === 200 ) {
 				$response = maybe_unserialize( $response ['body'] );
 				if ( isset( $response['message'] ) ) {
@@ -244,6 +422,7 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 
 
 		function register_my_plugin() {
+
 			if ( isset( $_REQUEST['register'] ) ) {
 				$response = $this->register_this_plugin();
 				if ( $response ) {
@@ -258,11 +437,10 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 					background-color: darkgray;
 					color: white;
 					font-weight: bold;
-
 				}
 
 				table.widefat tr td:first-child {
-					width: 25%;
+					width: 33%;
 				}
 
 				table.widefat td:first-child {
@@ -337,5 +515,30 @@ if ( ! class_exists( 'pbciPlugin' ) ) {
 			</table>
 		<?php
 		}
+
+		function echo_settings_checkbox( $option_name, $default_is_checked = true ) {
+
+			$option_value = get_option( $option_name, $default_is_checked ? '1' : '0' );
+
+			?>
+			<input type="hidden"
+			       id="<?php echo $this->get_setting_form_id( $option_name ); ?>"
+			       name="<?php echo $this->get_setting_form_name( $option_name ); ?>"
+			       value="0">
+
+			<input type="checkbox"
+				<?php checked( $option_value ); ?>
+				   id="<?php echo $this->get_setting_form_id( $option_name ); ?>"
+				   name="<?php echo $this->get_setting_form_name( $option_name ); ?>"
+				   value="1">
+
+			<?php
+
+		}
+
+	}
+} else {
+	if ( function_exists( 'pbci_log' ) ) {
+		pbci_log( 'pbci-plugin class already exists, skipping load in ' . __FILE__ );
 	}
 }

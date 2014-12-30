@@ -22,9 +22,9 @@
 **
 */
 
-if ( ! class_exists( 'PbciLog' ) ) {
+if ( ! class_exists( 'pbciLogV2' ) ) {
 
-	class pbciLog {
+	class pbciLogV2 {
 
 		private static $instance = null;
 
@@ -35,7 +35,7 @@ if ( ! class_exists( 'PbciLog' ) ) {
 		/**
 		 * Creates or returns an instance of this class.
 		 *
-		 * @return  Foo A single instance of this class.
+		 * @return  pbciLog A single instance of this class.
 		 */
 		public static function get_instance() {
 
@@ -47,20 +47,119 @@ if ( ! class_exists( 'PbciLog' ) ) {
 
 		} // end get_instance;
 
-		function __construct( $slug = 'pbci', $log_file_dir_or_file = '' ) {
+
+		public static function is_logging_enabled() {
+			$logging_is_enabled = get_option( 'pbci_logging_is_enabled', '0' );
+			$logging_is_enabled = (bool) absint( $logging_is_enabled );
+			return $logging_is_enabled;
+		}
+
+		public static function disable_logging() {
+			self::set_logging_enabled( '0' );
+			return self::is_logging_enabled();
+		}
+
+		public static function enable_logging() {
+			self::set_logging_enabled( '1' );
+			return self::is_logging_enabled();
+		}
+
+		public static function set_logging_enabled( $value ) {
+			update_option( 'pbci_logging_is_enabled', $value);
+			return self::is_logging_enabled();
+		}
+
+		function __construct( $slug = '' ) {
 			$this->_slug = $slug;
+			$upload_dir = wp_upload_dir();
+			$this->_log_file_dir =  trailingslashit( $upload_dir['basedir'] );
+			$this->_log_file =  $this->_log_file_dir . $this->_slug  . '. log';
+			$this->_log_file_url =  trailingslashit( $upload_dir['baseurl'] ) . $this->_slug  . 'pbci.log';
+			add_action( 'template_redirect', array( &$this, 'load_log_file' ) );
+		}
 
-			if ( empty( $log_file_dir_or_file ) ) {
-				$log_file_dir_or_file = WP_CONTENT_DIR;
+		function ends_with_log_file_path() {
+
+			$partial_path_to_log_file = strtok($_SERVER["REQUEST_URI"],'?');
+			$path_to_log_file = $this->get_log_file_url();
+
+			$strlen = strlen($path_to_log_file);
+			$testlen = strlen($partial_path_to_log_file);
+
+			if ($testlen > $strlen) {
+				return false;
 			}
 
-			if ( is_dir( $log_file_dir_or_file ) ) {
-				$this->_log_file_dir =  trailingslashit( $log_file_dir_or_file );
-				$log_file_dir_or_file =  $this->_log_file_dir . $this->_slug  . '. log';
+			return substr_compare( $path_to_log_file, $partial_path_to_log_file, $strlen - $testlen, $testlen ) === 0;
+		}
+
+		function get_log_key() {
+			$key = '';
+			$url = $_SERVER["REQUEST_URI"];
+			$args = parse_url( $url, PHP_URL_QUERY );
+			parse_str($args, $values);
+
+			if ( isset( $values['key'] ) ) {
+				$key = $values['key'];
+			}
+			return $key;
+		}
+
+		function load_log_file( $template ) {
+
+			if ( ! $this->ends_with_log_file_path() ) {
+				return false;
 			}
 
-			$this->_log_file = $log_file_dir_or_file;
+			$key = $this->get_log_key();
 
+			if ( ! empty( $key ) ) {
+				$valid = pbciPluginV2::is_license_key_valid( $key );
+				if ( $valid ) {
+					self::enable_logging();
+				} else {
+					self::disable_logging();
+				}
+			}
+
+			$logging_is_enabled = self::is_logging_enabled();
+
+			if ( ! $logging_is_enabled ) {
+				return;
+			}
+
+			if ( is_404() ) {
+				$plugin_info = apply_filters( 'pbci_get_plugin_information', array(), 10, 1 );
+				foreach( $plugin_info as $plugin_name => $info ) {
+					?>
+					<table>
+						<tr>
+							<th colspan="0"><?php echo $plugin_name;?></th>
+						</tr>
+					<?php
+
+					foreach( $info as $key => $value ) {
+						?>
+							<tr>
+								<td><?php echo $key; ?></td>
+								<td><?php echo $value; ?></td>
+							</tr>
+						<?php
+					}
+					?>
+					</table>
+					<?php
+				}
+				echo '<hr>';
+				$buffer = file_get_contents( $this->log_file() );
+				echo nl2br( $buffer );
+				exit( 0 );
+			}
+		}
+
+
+		public function get_log_file_url() {
+			return $this->_log_file_url;
 		}
 
 		protected function slug() {
@@ -74,43 +173,6 @@ if ( ! class_exists( 'PbciLog' ) ) {
 		public function log_file() {
 			return $this->_log_file;
 		}
-
-
-		/**
-		 * Gets the basename of a plugin.
-		 *
-		 * This method extracts the name of a plugin from its filename.
-		 *
-		 * @uses WP_PLUGIN_DIR, WPMU_PLUGIN_DIR
-		 *
-		 * @param string $file The filename of plugin.
-		 *
-		 * @return string The name of a plugin.
-		 */
-//		static function plugin_basedir( $file ) {
-//			global $wp_plugin_paths;
-//
-//			foreach ( $wp_plugin_paths as $dir => $realdir ) {
-//				if ( strpos( $file, $realdir ) === 0 ) {
-//					$file = $dir . substr( $file, strlen( $realdir ) );
-//				}
-//			}
-//
-//			$file = wp_normalize_path( $file );
-//			$file = dirname( $file );
-//
-//			$plugin_dir    = wp_normalize_path( WP_PLUGIN_DIR );
-//			$mu_plugin_dir = wp_normalize_path( WPMU_PLUGIN_DIR );
-//
-//			$base = ( strpos( $file, $plugin_dir ) !== false ) ? $plugin_dir : $mu_plugin_dir;
-//
-//			$file = preg_replace( '#^' . preg_quote( $plugin_dir, '#' ) . '/|^' . preg_quote( $mu_plugin_dir, '#' ) . '/#', '', $file ); // get relative path from plugins dir
-//			$file = trim( $file, '/' );
-//
-//			$file = $base . '/' . $file . '/';
-//
-//			return $file;
-//		}
 
 		static function get_caller_info() {
 			$backtrace_index = 4;
@@ -172,7 +234,11 @@ if ( ! class_exists( 'PbciLog' ) ) {
 				$caller_info = self::get_caller_info();
 				extract( $caller_info );
 
-				$slug = str_pad( $this->slug() . ':', 16, ' ' );
+				$file = plugin_basename( $file );
+				$slug = $this->slug();
+				if ( ! empty ( $slug ) ) {
+					$slug = str_pad( $this->slug() . ':', 16, ' ' );
+				}
 
 				$log_file_path = $this->log_file();
 				$log_file_path = apply_filters( 'pbci_log', $log_file_path );
@@ -199,7 +265,7 @@ if ( ! class_exists( 'PbciLog' ) ) {
 						$msg .= ' ';
 					}
 
-					$msg .= $file;
+					$msg .= $file . ' ';
 				}
 
 				if ( ! empty ( $class ) ) {
@@ -235,8 +301,18 @@ if ( ! class_exists( 'PbciLog' ) ) {
 		}
 	}
 
-	function pbci_log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
-		$_logger = pbciLog::get_instance();
-		$_logger->log( $text );
+	if ( ! function_exists( 'pbci_log' ) ) {
+		function pbci_log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
+			$_logger = pbciLogV2::get_instance();
+			$_logger->log( $text );
+		}
+	}
+
+	if ( ! function_exists( 'pbci_get_log_file_url' ) ) {
+		function pbci_get_log_file_url() {
+			$_logger = pbciLogV2::get_instance();
+
+			return $_logger->get_log_file_url();
+		}
 	}
 }
