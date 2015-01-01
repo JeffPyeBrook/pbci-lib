@@ -24,37 +24,32 @@
 **
 */
 
-$pbci_file_to_check = dirname( __FILE__) . '/pbci-log.class.php';
+$pbci_file_to_check = dirname( __FILE__ ) . '/pbci-log.class.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
 
-$pbci_file_to_check = dirname( __FILE__) . '/nag.php';
+$pbci_file_to_check = dirname( __FILE__ ) . '/nag.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
 
-$pbci_file_to_check = dirname( __FILE__) . '/about-support.php';
+$pbci_file_to_check = dirname( __FILE__ ) . '/about-support.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
 
-$pbci_file_to_check = dirname( __FILE__) . '/pbci-check-for-update.php';
+$pbci_file_to_check = dirname( __FILE__ ) . '/util.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
 
-$pbci_file_to_check = dirname( __FILE__) . '/util.php';
+$pbci_file_to_check = dirname( __FILE__ ) . '/pbci-metabox.class.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
 
-$pbci_file_to_check = dirname( __FILE__) . '/pbci-metabox.class.php';
-if (file_exists(  $pbci_file_to_check ) ) {
-	include_once( $pbci_file_to_check );
-}
-
-$pbci_file_to_check = dirname( __FILE__) . '/pbci-plugin.class.php';
+$pbci_file_to_check = dirname( __FILE__ ) . '/pbci-plugin.class.php';
 if (file_exists(  $pbci_file_to_check ) ) {
 	include_once( $pbci_file_to_check );
 }
