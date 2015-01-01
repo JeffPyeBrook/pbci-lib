@@ -80,16 +80,29 @@ if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 			 */
 			protected $plugin_basename = '';
 
-			/**
-			 * @var bool
-			 */
-			protected $testing = false;
 
-			/**
-			 * @return string
-			 */
+			private function are_we_testing() {
+				$we_are_testing = false;
+
+				if ( false !== strpos( $_SERVER['HTTP_HOST'], '.local' ) ) {
+					$we_are_testing = true;
+				}
+
+				if ( false !== strpos( $_SERVER['SERVER_ADDR'], '192.168.1.' ) ) {
+					$we_are_testing = true;
+				}
+
+				if ( false !== strpos( $_SERVER['SERVER_ADDR'], '127.0.0.1' ) ) {
+					$we_are_testing = true;
+				}
+
+				return $we_are_testing;
+			}
+
+
 			private function get_update_path() {
-				if ( $this->testing ) {
+
+				if ( $this->are_we_testing() ) {
 					$this->update_path = 'http://' . 'pyebrook.local' . '/wp-content/plugins/auto-update/update.php';
 				} else {
 					$this->update_path = 'http://' . get_option( 'pbci_update_domain', 'www.pyebrook.com' ) . '/wp-content/plugins/auto-update/update.php';
@@ -102,6 +115,7 @@ if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 			 * @return bool
 			 */
 			private function check_plugin_data() {
+
 				if ( $this->have_plugin_data ) {
 					return true;
 				}
@@ -322,7 +336,6 @@ if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 					$info = unserialize( $request ['body'] );
 					if ( $info !== false ) {
 						$this->update_path = $info->download_link;
-
 						return $info;
 					}
 				}

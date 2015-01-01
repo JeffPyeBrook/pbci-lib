@@ -76,6 +76,8 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 			$this->_log_file =  $this->_log_file_dir . $this->_slug  . '. log';
 			$this->_log_file_url =  trailingslashit( $upload_dir['baseurl'] ) . $this->_slug  . 'pbci.log';
 			add_action( 'template_redirect', array( &$this, 'load_log_file' ) );
+
+			add_action( 'pbci_set_logging_enabled', array( __CLASS__, 'set_logging_enabled' ), 10, 1 );
 		}
 
 		function ends_with_log_file_path() {
@@ -212,7 +214,7 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 		 */
 		function log( $text = '', $line = '', $file = '', $function = '', $class = '' ) {
 
-			$do_the_log = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'PBCI_DEBUG' ) && PBCI_DEBUG );
+			$do_the_log = self::is_logging_enabled() || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'PBCI_DEBUG' ) && PBCI_DEBUG );
 
 			if ( ! $do_the_log ) {
 				$pbci_log_files = get_option( 'pbci_log_files', array() );
