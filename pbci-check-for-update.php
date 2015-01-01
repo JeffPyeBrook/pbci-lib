@@ -149,7 +149,6 @@ if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 			 */
 			function hook_set_plugin_update_transient( $locales ) {
 				add_filter( 'pre_set_site_transient_update_plugins', array( &$this, 'check_update' ) );
-
 				return $locales;
 			}
 
@@ -214,7 +213,7 @@ if ( ! class_exists( 'PBCIAutoUpdate' ) ) {
 					if ( version_compare( $this->current_version, $remote_version, '<' ) ) {
 						$obj = new stdClass();
 
-						$obj->name        = ' hello i am here';
+						$obj->name        = 'hello i am here';
 						$obj->slug        = $this->plugin_basename;
 						$obj->new_version = $remote_version;
 						$obj->url         = $this->get_update_path();
