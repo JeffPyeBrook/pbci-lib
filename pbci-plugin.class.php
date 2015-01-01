@@ -76,7 +76,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				}
 			}
 
-			return $this->plugin_data;
+			return $this->_plugin_data;
 
 		}
 
@@ -216,7 +216,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		function log( $message ) {
 			$this->_logster->log( $message );
 		}
-
 
 		// Add settings link on plugin page
 		function settings_links( $links ) {
