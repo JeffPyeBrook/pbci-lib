@@ -716,8 +716,4 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 	}
-} else {
-	if ( function_exists( 'pbci_log' ) ) {
-		pbci_log( 'pbci-plugin class already exists, skipping load in ' . __FILE__ );
-	}
 }
