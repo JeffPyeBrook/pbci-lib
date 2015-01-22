@@ -37,23 +37,13 @@ class GS_Metabox_Between_Dates extends PBCI_MetaBox {
 		$saved_end_date   = $this->get_option( $id, 'end_date', true );
 		$enabled          = $this->get_option( $id, 'enabled' ) == '1';
 
-		// //////////////////////////////////////////////////////////////////
-		// get some default times
-		$datetime   = new DateTime( $post->post_date );
-		$start_date = $datetime->format( 'Y-m-d' );
-		$x          = strtotime( '+7 days', strtotime( $start_date ) );
-		$end_date   = date( 'Y-m-d', $x );
-		$start_time = '00:00';
-		$end_time   = '23:59';
 
 		// //////////////////////////////////////////////////////////////////
 		// If there are saved times we can work with them
-		$start_date = $post->post_date;
 
 		if ( ! empty( $saved_start_date ) ) {
 			try {
 				$datetime   = new DateTime( $saved_start_date );
-				$start_date = $datetime->format( 'Y-m-d' );
 			} catch ( Exception $e ) {
 				bling_log( 'malformed start date or time' );
 				$saved_start_date = '';
@@ -63,7 +53,6 @@ class GS_Metabox_Between_Dates extends PBCI_MetaBox {
 		if ( ! empty( $saved_end_date ) ) {
 			try {
 				$datetime = new DateTime( $saved_end_date );
-				$end_date = $datetime->format( 'Y-m-d' );
 			} catch ( Exception $e ) {
 				bling_log( 'malformed end date or time' );
 				$saved_end_date = '';
@@ -141,10 +130,6 @@ function pbci_gs_between_dates_applies( $applies = false, $shipping_method_post_
 	if ( ! $enabled ) {
 		pbci_log( 'check not enabled for ' . $shipping_method_post_id );
 		return $applies;
-	}
-
-	if ( false === $cart ) {
-		$cart  = wpsc_get_cart();
 	}
 
 	$saved_start_date = $mb->get_option( $shipping_method_post_id, 'start_date' );

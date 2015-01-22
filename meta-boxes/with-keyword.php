@@ -71,7 +71,7 @@ function pbci_gs_setup_ship_mb_with_keywords() {
 	new GS_Metabox_With_Keyword( 'For Products With Keyword',  pbci_gs_post_type() );
 }
 
-add_action( 'pbci_gs_setup_ship_mb', 'pbci_gs_setup_ship_mb_with_keywords', 5 , 0 );
+add_action( '', 'pbci_gs_setup_ship_mb_with_keywords', 5 , 0 );
 
 
 function pbci_gs_keyword_applies( $applies = false, $shipping_method_post_id = 0, $cart = false ) {

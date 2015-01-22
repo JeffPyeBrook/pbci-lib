@@ -6,9 +6,9 @@
         "source": {
             "type": "git",
             "url": "h:/projects/pbci-lib/",
-            "reference": "8ae820e4e1099438581c1df2c8436181caab0f6b"
+            "reference": "5507c9b0d65ef15fa7ff27f77b3cd1d7d5ec471d"
         },
-        "time": "2014-12-05 21:16:32",
+        "time": "2015-01-02 17:23:42",
         "type": "library",
         "installation-source": "source",
         "license": [

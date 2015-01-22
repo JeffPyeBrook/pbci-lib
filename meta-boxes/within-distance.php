@@ -62,7 +62,7 @@ class GS_Metabox_Within_Distance extends PBCI_MetaBox {
 					}
 
 					$distance_from_store_base = pbci_gs_get_distance_from_store_base( $address, $distance_units );
-					if ( $distance_from_store_base ) {
+					if ( $distance_from_store_base && ha) {
 						echo $distance_from_store_base->text . ' from store base address';
 					} else {
 						echo 'Could not find distance from store base address';
@@ -124,11 +124,6 @@ function pbci_gs_within_distance_applies( $applies = false, $shipping_method_pos
 		pbci_log( 'check not enabled for ' . $shipping_method_post_id );
 		return $applies;
 	}
-
-	if ( false === $cart ) {
-		$cart  = wpsc_get_cart();
-	}
-
 
 	$shipping_region = wpsc_get_customer_meta( 'shippingregion' );
 	if ( ! empty( $shipping_region ) ) {

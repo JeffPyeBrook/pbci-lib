@@ -118,6 +118,8 @@ function pbci_gs_init_purchase_status_counts() {
 
 	$list = pbci_gs_status_list();
 
+	$statti = array();
+
 	foreach( $list as $id ) {
 		$statti[ pbci_gs_get_status_name( $id ) ] = 0;
 	}
@@ -125,9 +127,12 @@ function pbci_gs_init_purchase_status_counts() {
 	return $statti;
 }
 
+/**
+ * @param WPSC_Purchase_Log $purchase_log
+ *
+ * @return string|void
+ */
 function pbci_gs_get_purchase_order_status ( $purchase_log ) {
-	$order_status = '';
-	global $wpsc_purchlog_statuses;
 
 	$track_id = $purchase_log->get( 'track_id' );
 	if ( !empty( $track_id ) ) {

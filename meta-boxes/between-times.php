@@ -36,7 +36,6 @@ class GS_Metabox_Between_Times extends PBCI_MetaBox {
 
 		$start_time       = $this->get_option( $id, 'start_time' );
 		$end_time         = $this->get_option( $id, 'end_time' );
-		$cost             = $this->get_option( $id, 'cost', true );
 		$enabled          = $this->get_option( $id, 'enabled' ) == '1';
 
 		$days_of_week = array( 'monday', 'tuesday', 'wednesday',  'thursday', 'friday', 'saturday', 'sunday' );

@@ -32,14 +32,11 @@ function pbci_gs_mailing_labels_html_and_css() {
 	$sql = 'SELECT id FROM ' . WPSC_TABLE_PURCHASE_LOGS . ' WHERE shipping_method = "pbci_group_shipping" AND shipping_option = "' . $group_ship . '" ORDER BY shipping_option'  ;
 	$purchase_log_ids = $wpdb->get_col( $sql , 0 );
 
-	$summaries = array();
-	$products = array();
 	$labels_info = array();
 
 	foreach ($purchase_log_ids as $purchase_log_id ) {
 
 		$purchase_log = new WPSC_Purchase_Log( $purchase_log_id );
-		$purchaser_user_id = $purchase_log->get( 'user_ID' );
 		$cart_contents = $purchase_log->get_cart_contents();
 
 		$checkout_form_data = new WPSC_Checkout_Form_Data( $purchase_log_id );
@@ -49,7 +46,14 @@ function pbci_gs_mailing_labels_html_and_css() {
 
 		foreach ( $cart_contents as $cart_item ) {
 			for ( $index = 0; $index <  $cart_item->quantity; $index ++ ) {
-				$custom_message = pbci_gs_cart_item_custom_message($cart_item->id);
+
+				$custom_messages = apply_filters( 'pbci_get_cart_item_extra_message', '', $cart_item, $purchase_log_id );
+				if ( !empty( $custom_messages ) ) {
+					$custom_message = implode( ' ', $custom_messages );
+				} else {
+					$custom_message = '';
+				}
+
 				$info = array();
 
 				$info['order_id']        = $purchase_log_id;
@@ -92,7 +96,7 @@ function pbci_gs_mailing_labels_html_and_css() {
 		width: 8.5in;
 		margin-right: 0.5cm;
 		margin-left: 0.5cm;
-		margin-top: 1.3 cm;
+		margin-top: 1.3cm;
 		margin-bottom: 1.3cm;
 	}
 	.label{

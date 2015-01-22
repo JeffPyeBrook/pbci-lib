@@ -52,10 +52,17 @@ class pbci_group_shipping {
 		return $this->internal_name;
 	}
 
+	/**
+	 * @return array
+	 */
 	function get_shipping_option_ids() {
 
 		if ( ! $this->shipping_option_post_ids ) {
 			$shipping_groups = get_option( 'pbcs_gs_shipping_groups', array() );
+
+			if ( ! is_array( $shipping_groups ) ) {
+				$shipping_groups = array();
+			}
 
 			if ( isset( $shipping_groups[ $this->getName() ] ) ) {
 				$this->shipping_option_post_ids = $shipping_groups[ $this->getName() ];
@@ -77,11 +84,6 @@ class pbci_group_shipping {
 		return '';
 	}
 
-	/**
-	 *
-	 *
-	 * @return unknown
-	 */
 	function submit_form() {
 // 		if (  ! isset( $_POST['free_priority_shipping_threshold'] ) )
 // 			return false;
@@ -123,14 +125,11 @@ class pbci_group_shipping {
 
 	}
 
-	/**
-	 *
-	 *
-	 * @param unknown $cart_item (reference)
-	 *
-	 * @return unknown
-	 */
 	function get_item_shipping( &$cart_item ) {
+		if ( empty ( $cart_item ) ) {
+			pbci_log( 'ERROR: invalid(empty) cart item' );
+		}
+
 		return 0;
 	}
 
