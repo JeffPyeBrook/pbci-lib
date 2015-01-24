@@ -1,6 +1,6 @@
 {
   "repositories": [
-    { "type": "git", "url": "h:/projects/pbci-lib/" },
+    { "type": "git", "url": "git@github.com:JeffPyeBrook/pbci-lib.git" },
     { "packagist": false }
   ],
 
