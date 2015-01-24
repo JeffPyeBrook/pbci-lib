@@ -65,13 +65,11 @@ class GS_Metabox_With_Keyword extends PBCI_MetaBox {
 	}
 }
 
-
-
 function pbci_gs_setup_ship_mb_with_keywords() {
 	new GS_Metabox_With_Keyword( 'For Products With Keyword',  pbci_gs_post_type() );
 }
 
-add_action( '', 'pbci_gs_setup_ship_mb_with_keywords', 5 , 0 );
+add_action( 'pbci_gs_setup_ship_mb', 'pbci_gs_setup_ship_mb_with_keywords', 5 , 0 );
 
 
 function pbci_gs_keyword_applies( $applies = false, $shipping_method_post_id = 0, $cart = false ) {
@@ -93,7 +91,6 @@ function pbci_gs_keyword_applies( $applies = false, $shipping_method_post_id = 0
 		return $applies;
 	}
 
-
 	if ( false === $cart ) {
 		$cart  = wpsc_get_cart();
 	}
@@ -102,17 +99,23 @@ function pbci_gs_keyword_applies( $applies = false, $shipping_method_post_id = 0
 
 	$keywords = explode( "\r\n", $keywords );
 
+	$keyword_match = false;
+
 	if ( is_array ( $cart->cart_items ) && !empty( $cart->cart_items ) ) {
 		foreach ( $cart->cart_items as $cart_item ) {
 			$product_id = absint( $cart_item->product_id );
 			$title = get_the_title( $product_id );
 			foreach ( $keywords as $keyword ) {
 				if ( false !== stripos( $title, $keyword ) ) {
-					$applies = true;
+					$keyword_match = true;
 					break;
 				}
 			}
 		}
+	}
+
+	if ( ! $keyword_match ) {
+		$applies = false;
 	}
 
 	return $applies;

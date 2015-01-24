@@ -75,11 +75,15 @@ function pbci_gs_get_distance_from_store_base( $to,  $units = 'metric', $from = 
 		$response_body = $response['body'];
 		$json_response = json_decode( $response_body );
 
-		$distance = $json_response->rows[0]->elements[0]->distance;
-		if ( $units == 'imperial' ) {
-			$distance->value = $distance->value * 0.000621371; // convert to miles
+		if ( ! empty( $json_response->rows ) && ! empty( $json_response->rows[0]->elements ) ) {
+			$distance = $json_response->rows[0]->elements[0]->distance;
+			if ( $units == 'imperial' ) {
+				$distance->value = $distance->value * 0.000621371; // convert to miles
+			} else {
+				$distance->value = $distance->value * 0.001; // convert to km
+			}
 		} else {
-			$distance->value = $distance->value * 0.001; // convert to km
+			$distance = false;
 		}
 	} else {
 		$distance = false;

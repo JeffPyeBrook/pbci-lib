@@ -106,6 +106,7 @@ class pbci_group_shipping {
 				$settings_mb = new GS_Metabox_Shipping_Method_Settings( 'Settings', pbci_gs_post_type() );
 
 				if ( $settings_mb->get_option( $shipping_method_id, 'enabled' ) ) {
+					// start out by assuming the shipping method applies, individual checks will turn off the applies
 					$applies = apply_filters( 'pbci_gs_check_condition', true, $shipping_method_id, $wpsc_cart );
 					if ( $applies ) {
 						$shipping_method_name = get_the_title( $shipping_method_id );

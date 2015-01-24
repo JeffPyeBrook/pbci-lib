@@ -62,7 +62,7 @@ class GS_Metabox_Within_Distance extends PBCI_MetaBox {
 					}
 
 					$distance_from_store_base = pbci_gs_get_distance_from_store_base( $address, $distance_units );
-					if ( $distance_from_store_base && ha) {
+					if ( $distance_from_store_base && property_exists( $distance_from_store_base, 'text' ) ) {
 						echo $distance_from_store_base->text . ' from store base address';
 					} else {
 						echo 'Could not find distance from store base address';
