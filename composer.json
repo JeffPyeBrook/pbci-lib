@@ -1,0 +1,11 @@
+{
+    "name": "pyebrook/pbci-lib",
+    "authors": [
+        {
+            "name": "Jeffrey Schutzman",
+            "email": "jeff@pyebrook.com"
+        }
+    ],
+    "description" : "pye brook utility library",
+    "license": "proprietary"
+}
