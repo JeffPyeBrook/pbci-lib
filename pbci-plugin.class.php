@@ -27,21 +27,70 @@
 if ( ! class_exists( 'pbciPluginV2' ) ) {
 	class pbciPluginV2 {
 
-		private $_plugin_slug;
-		private $_plugin_file;
-		private $_logster = null;
+		private $_plugin_slug  = '';
+		private $_plugin_file  = '';
 		private $_license_code = '';
-		private $_plugin_data = null;
-		private $_plugin_name = '';
-		private $_update_path = '';
+		private $_plugin_name  = '';
+		private $_update_path  = '';
+
+		private $_plugin_data  = null;
+		private $_logster      = null;
 
 		private $_remote_plugin_info = null;
 
-		public function get_plugin_basename() {
-			return plugin_basename( $this->_plugin_file );
+		public function __construct() {
 		}
 
-		public function __construct() {
+		public function init( $file ) {
+
+			$this->_plugin_file = $file;
+			$this->_plugin_slug = basename( dirname( $file ) );
+
+			if ( class_exists( 'pbciLogV2' ) ) {
+				if ( method_exists( 'pbciLogV2', 'get_instance' ) ) {
+					$this->_logster = pbciLogV2::get_instance();
+				} else {
+					// backwards compatibility
+					$this->_logster = new pbciLog( $this->_plugin_slug, dirname( $this->_plugin_file ) );
+				}
+			}
+			if ( is_admin() ) {
+
+				$this->_settings_page_link = '<a href="options-general.php?page='
+				                             . $this->_plugin_slug . '_settings' . '">Settings</a>';
+
+				add_action( $this->_plugin_slug . '_settings', array( &$this, 'register_my_plugin' ), 1, 0 );
+				add_action( $this->_plugin_slug . '_settings', array( &$this, 'core_settings' ), 2, 0 );
+				add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
+
+
+				add_filter( 'pbci_get_plugin_information', array( &$this, 'get_plugin_information' ), 10, 1 );
+				add_filter( 'pbci_validate_license_key', array( &$this, 'validate_license_key' ), 10, 2 );
+				add_filter( 'plugin_action_links_' . $this->get_plugin_basename(), array( &$this, 'settings_links' ) );
+
+				add_filter( 'plugins_api', array( &$this, 'check_info' ), 10, 3 );
+
+				add_action( 'in_plugin_update_message-' . $this->get_plugin_basename(), array(
+					&$this,
+					'plugin_update_message'
+				), 10, 2 );
+
+				add_action( 'wp_dashboard_setup', array( &$this, 'dashboard_widget_setup' ), 999 );
+
+				add_filter( 'pbci_plugin_name_and_version', array(
+					&$this,
+					'get_plugin_name_and_version_filter'
+				), 10, 1 );
+			}
+		}
+
+		public function get_plugin_name_and_version_filter( $info_array ) {
+			$info_array[$this->get_plugin_name()] = $this->get_plugin_version();
+			return $info_array;
+		}
+
+		public function get_plugin_basename() {
+			return plugin_basename( $this->_plugin_file );
 		}
 
 		function get_plugin_version() {
@@ -139,37 +188,8 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			return $this->_plugin_file;
 		}
 
-		public function init( $file ) {
-
-			$this->_plugin_file = $file;
-			$this->_plugin_slug = basename( dirname( $file ) );
-
-			if ( class_exists( 'pbciLogV2' ) ) {
-				if ( method_exists( 'pbciLogV2', 'get_instance' ) ) {
-					$this->_logster = pbciLogV2::get_instance();
-				} else {
-					// backwards compatibility
-					$this->_logster = new pbciLog( $this->_plugin_slug, dirname( $this->_plugin_file ) );
-				}
-			}
-
-			$this->_settings_page_link = '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">Settings</a>';
-
-			add_action( $this->_plugin_slug . '_settings', array( &$this, 'register_my_plugin' ), 1, 0 );
-			add_action( $this->_plugin_slug . '_settings', array( &$this, 'core_settings' ), 2, 0 );
-			add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
-
-			add_filter( 'pbci_get_plugin_information', array( &$this, 'get_plugin_information' ), 10, 1 );
-			add_filter( 'pbci_validate_license_key', array( &$this, 'validate_license_key' ), 10, 2 );
-			add_filter( 'plugin_action_links_' . $this->get_plugin_basename(), array( &$this, 'settings_links' ) );
-
-			add_filter( 'plugins_api', array( &$this, 'check_info' ), 10, 3 );
-
-			add_action( 'in_plugin_update_message-' . $this->get_plugin_basename(), array( &$this, 'plugin_update_message' ), 10, 2 );
-		}
-
 		public function plugin_update_message( $plugin_data, $r ) {
-			$info = $this->get_plugin_information_from_repository();
+			$info   = $this->get_plugin_information_from_repository();
 			$notice = '<div style="display:block;margin-top:15px;margin-bottom:15px;font-weight: bold;">' . $info['upgrade_notice'] . '</div>';
 			echo $notice;
 		}
@@ -183,6 +203,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			if ( property_exists( $arg, 'slug' ) ) {
 				if ( $arg->slug === $this->get_plugin_slug() ) {
 					$information = $this->get_plugin_information_from_repository();
+
 					return $information['readme'];
 				}
 			}
@@ -193,6 +214,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		static function is_license_key_valid( $key ) {
 			$valid = false;
 			$valid = apply_filters( 'pbci_validate_license_key', $valid, $key );
+
 			return $valid;
 		}
 
@@ -224,6 +246,15 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			}
 
 			return $this->_plugin_name;
+		}
+
+		function get_plugin_description() {
+			if ( empty( $this->_plugin_description ) ) {
+				$data                      = $this->get_plugin_data_from_file();
+				$this->_plugin_description = $data['Description'];
+			}
+
+			return $this->_plugin_description;
 		}
 
 		function admin_menus() {
@@ -278,6 +309,29 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 						} ?>
 					</td>
 				</tr>
+
+				<tr>
+					<td>
+						<?php echo $this->get_plugin_name(); ?> Version:
+					</td>
+					<td>
+						<?php echo $this->get_plugin_version(); ?>
+					</td>
+				</tr>
+
+				<?php $other_pbci_plugins = apply_filters( 'pbci_plugin_name_and_version', array() ); ?>
+				<?php foreach( $other_pbci_plugins as $name => $version ) { ?>
+					<?php if ( $name == $this->get_plugin_name() ) { continue; } ?>
+					<tr>
+						<td>
+							<?php echo $name; ?>
+						</td>
+						<td>
+							<?php echo $version; ?>
+						</td>
+					</tr>
+
+				<?php } ?>
 
 				<tr>
 					<td>
@@ -355,7 +409,9 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			?></div><?php
 			do_action( 'after_' . $this->_plugin_slug . '_settings' );
 
+			$this->about_help_support();
 		}
+
 
 		function collect_settings() {
 			ob_start();
@@ -452,8 +508,8 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			// If a newer version is available, add the update
 			if ( $remote_information !== false && is_array( $remote_information ) ) {
 
-				if ( isset( $remote_information[ 'Version' ] ) ) {
-					$remote_version = $remote_information[ 'Version' ];
+				if ( isset( $remote_information['Version'] ) ) {
+					$remote_version = $remote_information['Version'];
 				} else {
 					$remote_version = '';
 				}
@@ -552,10 +608,10 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 					$update_notice = 'You can access this plugin update using <a href="'
 					                 . $info['user_account_url']
-					                 .'">your personal downloads page</a> at <a href="'
+					                 . '">your personal downloads page</a> at <a href="'
 					                 . $info['store_url']
 					                 . '">'
-					                 .  $info['store_name'];
+					                 . $info['store_name'];
 
 					// Get the upgrade notice for the new plugin version.
 					if ( isset( $info['upgrade_notice'] ) ) {
@@ -602,7 +658,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 			return false;
 		}
-
 
 
 		function save_settings( $settings ) {
@@ -788,6 +843,206 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 		<?php
 
+		}
+
+		function about_this_plugin() {
+
+		}
+
+		function about_help_support() {
+			?>
+
+			<div class="wrap">
+			<?php //pbci_plugin_page_title_box( 'WP-eCommerce Check-Up and Fix-Up', 'snappy' ); ?>
+
+			<table class="widefat">
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2">About <?php echo $this->get_plugin_name(); ?></th>
+				</tr>
+
+				<tr>
+					<td colspan="2">
+						<?php $this->about_this_plugin(); ?>
+					</td>
+				</tr>
+
+				<tr>
+					<td></td>
+				</tr>
+
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2">Support Us</th>
+				</tr>
+
+				<tr>
+					<td colspan="2">
+						Please consider the purchase of one of our other plugins. Check our web site for
+						the most current offerings. Below are some popular options.
+					</td>
+				</tr>
+
+				<tr>
+					<td></td>
+				</tr>
+
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2"><a href="http://www.pyebrook.com"><h2>stamps.com for WP-eCommerce</h2></a></th>
+				</tr>
+
+				<tr>
+					<td>
+						<img
+							src="<?php echo plugins_url( 'images/pye-brook-logo-pbci-stamps-com-min-128.png', __FILE__ ); ?>"/>
+					</td>
+					<td>
+						Use stamps.com to generate WP-eCommerce shipping quotes and print shipping labels from your
+						store dashboard. Shipping quotes using stamps.com, all USPS shipping options are available.
+						Ship packages from within WP-eCommerce, including paid shipping labels.
+					</td>
+				</tr>
+
+				<tr>
+					<td></td>
+				</tr>
+
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2"><a href="http://www.pyebrook.com"><h2>Shopper Rewards for WP-eCommerce</h2></a></th>
+				</tr>
+
+				<tr>
+					<td>
+						<img
+							src="<?php echo plugins_url( 'images/pye-brook-logo-wpec-shopper-rewards-128.png', __FILE__ ); ?>"/>
+					</td>
+					<td>
+						Let your shoppers earn points for purchasing from your WP-e-Commerce store. Give shoppers a
+						reason
+						to come back and make additional purchases.
+
+						<h3>Feature Highlights</h3>
+						<ul>
+							<li>Shoppers Earning points based on amount spent</li>
+							<li>Import historical purchases</li>
+							<li>Points history available to shoppers on their WP-eCommerce account page</li>
+							<li>Works with the WP e-Commerce Coupon System</li>
+							<li>Let customers change points into coupons</li>
+							<li>Customer point redemption self-service</li>
+							<li>Customers can easily redeem points on their WP-eCommerce account page</li>
+						</ul>
+
+					</td>
+				</tr>
+
+				<tr>
+					<td></td>
+				</tr>
+
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2"><a href="http://www.pyebrook.com"><h2>Free Shipping Pro for WP-eCommerce</h2></a>
+					</th>
+				</tr>
+
+				<tr>
+					<td>
+						<img
+							src="<?php echo plugins_url( 'images/pye-brook-logo-free-shipping-pro-128.png', __FILE__ ); ?>"/>
+					</td>
+					<td>
+						Enhanced free shipping based on number of items in cart, total cart value. You can
+						exclude products based on product tags or product categories. Limit free shipping to
+						specific countries, or exclude specific countries.
+					</td>
+				</tr>
+
+				<tr>
+					<td></td>
+				</tr>
+
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2"><a href="http://www.pyebrook.com"><h2>Store Admin eMail for WP-eCommerce</h2></a>
+					</th>
+				</tr>
+
+				<tr>
+					<td>
+						<img
+							src="<?php echo plugins_url( 'images/pye-brook-logo-email-wpec-customer-128.png', __FILE__ ); ?>"/>
+					</td>
+					<td>
+						Send emails to customers from the WP-e-Commerce purchase log. Configure each individual store
+						administrator
+						with a custom professional looking signature. Automatically sends copy of email communications
+						to store
+						administrator email.
+
+						No need to copy emails to your personal email program, or expose your personal email account
+						when communicating store business.
+					</td>
+				</tr>
+
+				<tr>
+					<td></td>
+				</tr>
+				<tr>
+					<td></td>
+				</tr>
+				<tr class="pbci-widefat-header-row">
+					<th colspan="2">News from <a href="http://www.pyebrook.com">www.pyebrook.com</a></th>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<?php pbci_news(); ?>
+					</td>
+				</tr>
+
+			</table>
+
+		<?php
+		}
+
+
+		function dashboard_widget_setup() {
+
+			wp_add_dashboard_widget(
+				'pbci_dashboard_news',
+				__( 'Updates from Pye Brook', 'pbci' ),
+				array( &$this, 'pbci_dashboard_news' )
+			);
+
+			// Sort the Dashboard widgets so ours it at the top
+			global $wp_meta_boxes;
+			$boxes  = $wp_meta_boxes['dashboard'];
+			$normal = isset( $wp_meta_boxes['dashboard']['normal'] ) ? $wp_meta_boxes['dashboard']['normal'] : array();
+
+			$normal_dashboard = isset( $normal['core'] ) ? $normal['core'] : array();
+
+			// Backup and delete our new dashboard widget from the end of the array
+			$pbci_widget_backup = array();
+			if ( isset( $normal_dashboard['pbci_dashboard_news'] ) ) {
+				$pbci_widget_backup['pbci_dashboard_news'] = $normal_dashboard['pbci_dashboard_news'];
+				unset( $normal_dashboard['pbci_dashboard_news'] );
+			}
+
+			// Merge the two arrays together so our widget is at the beginning
+			$sorted_dashboard = array_merge( $pbci_widget_backup, $normal_dashboard );
+
+			// Save the sorted array back into the original metaboxes
+
+			$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
+		}
+
+		/**
+		 * Shows the RSS feed for the WPEC dashboard widget
+		 *
+		 * @uses fetch_feed()             Build SimplePie object based on RSS or Atom feed from URL.
+		 * @uses wp_widget_rss_output()   Display the RSS entries in a list
+		 */
+		function pbci_dashboard_news() {
+			$feed_url   = 'http://www.pyebrook.com/tag/plugin-news/feed/?donotcachepage=76fbf08c731642f0ade0fbcc4ecfb31e';
+			$rss        = fetch_feed( $feed_url );
+			$rss->cache = false;
+			$args       = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 5 );
+			wp_widget_rss_output( $rss, $args );
 		}
 
 	}
