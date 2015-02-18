@@ -127,7 +127,7 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 			$logging_is_enabled = self::is_logging_enabled();
 
 			if ( ! $logging_is_enabled ) {
-				return;
+				return false;
 			}
 
 			if ( is_404() ) {
