@@ -51,30 +51,34 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 		public static function is_logging_enabled() {
 			$logging_is_enabled = get_option( 'pbci_logging_is_enabled', '0' );
 			$logging_is_enabled = (bool) absint( $logging_is_enabled );
+
 			return $logging_is_enabled;
 		}
 
 		public static function disable_logging() {
 			self::set_logging_enabled( '0' );
+
 			return self::is_logging_enabled();
 		}
 
 		public static function enable_logging() {
 			self::set_logging_enabled( '1' );
+
 			return self::is_logging_enabled();
 		}
 
 		public static function set_logging_enabled( $value ) {
-			update_option( 'pbci_logging_is_enabled', $value);
+			update_option( 'pbci_logging_is_enabled', $value );
+
 			return self::is_logging_enabled();
 		}
 
 		function __construct( $slug = '' ) {
-			$this->_slug = $slug;
-			$upload_dir = wp_upload_dir();
-			$this->_log_file_dir =  trailingslashit( $upload_dir['basedir'] );
-			$this->_log_file =  $this->_log_file_dir . $this->_slug  . '. log';
-			$this->_log_file_url =  trailingslashit( $upload_dir['baseurl'] ) . $this->_slug  . 'pbci.log';
+			$this->_slug         = $slug;
+			$upload_dir          = wp_upload_dir();
+			$this->_log_file_dir = trailingslashit( $upload_dir['basedir'] );
+			$this->_log_file     = $this->_log_file_dir . $this->_slug . '. log';
+			$this->_log_file_url = trailingslashit( $upload_dir['baseurl'] ) . $this->_slug . 'pbci.log';
 			add_action( 'template_redirect', array( &$this, 'load_log_file' ) );
 
 			add_action( 'pbci_set_logging_enabled', array( __CLASS__, 'set_logging_enabled' ), 10, 1 );
@@ -82,13 +86,13 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 
 		function ends_with_log_file_path() {
 
-			$partial_path_to_log_file = strtok($_SERVER["REQUEST_URI"],'?');
-			$path_to_log_file = $this->get_log_file_url();
+			$partial_path_to_log_file = strtok( $_SERVER["REQUEST_URI"], '?' );
+			$path_to_log_file         = $this->get_log_file_url();
 
-			$strlen = strlen($path_to_log_file);
-			$testlen = strlen($partial_path_to_log_file);
+			$strlen  = strlen( $path_to_log_file );
+			$testlen = strlen( $partial_path_to_log_file );
 
-			if ($testlen > $strlen) {
+			if ( $testlen > $strlen ) {
 				return false;
 			}
 
@@ -96,14 +100,15 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 		}
 
 		function get_log_key() {
-			$key = '';
-			$url = $_SERVER["REQUEST_URI"];
+			$key  = '';
+			$url  = $_SERVER["REQUEST_URI"];
 			$args = parse_url( $url, PHP_URL_QUERY );
-			parse_str($args, $values);
+			parse_str( $args, $values );
 
 			if ( isset( $values['key'] ) ) {
 				$key = $values['key'];
 			}
+
 			return $key;
 		}
 
@@ -127,30 +132,30 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 			$logging_is_enabled = self::is_logging_enabled();
 
 			if ( ! $logging_is_enabled ) {
-				return;
+				return false;
 			}
 
 			if ( is_404() ) {
 				$plugin_info = apply_filters( 'pbci_get_plugin_information', array(), 10, 1 );
-				foreach( $plugin_info as $plugin_name => $info ) {
+				foreach ( $plugin_info as $plugin_name => $info ) {
 					?>
 					<table>
 						<tr>
-							<th colspan="0"><?php echo $plugin_name;?></th>
+							<th colspan="0"><?php echo $plugin_name; ?></th>
 						</tr>
-					<?php
+						<?php
 
-					foreach( $info as $key => $value ) {
-						?>
+						foreach ( $info as $key => $value ) {
+							?>
 							<tr>
 								<td><?php echo $key; ?></td>
 								<td><?php echo $value; ?></td>
 							</tr>
 						<?php
-					}
-					?>
+						}
+						?>
 					</table>
-					<?php
+				<?php
 				}
 				echo '<hr>';
 				$buffer = file_get_contents( $this->log_file() );
@@ -178,27 +183,41 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 
 		static function get_caller_info() {
 			$backtrace_index = 4;
-			$traces          = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, $backtrace_index );
 
-			$backtrace_index--;
-
+			// setup some defaults in case things go wrong
 			$logger_info = array();
-			if ( isset( $traces[ $backtrace_index ] ) ) {
-				$trace                   = $traces[ $backtrace_index ];
-				$logger_info['file']     = isset( $trace['file'] ) ? wp_normalize_path( $trace['file'] ) : '';
-				$logger_info['line']     = isset( $trace['line'] ) ? $trace['line'] : '';
-				$logger_info['function'] = isset( $trace['function'] ) ? $trace['function'] : '';
-				$logger_info['class']    = isset( $trace['class'] ) ? $trace['class'] : '';
+			$logger_info['file']     = '';
+			$logger_info['line']     = '';
+			$logger_info['function'] = '';
+			$logger_info['class']    = '';
 
-				$backtrace_index--;
-				$trace                   = $traces[ $backtrace_index ];
-
-				if ( empty( $logger_info['file']  ) ) {
-					$logger_info['file']     = isset( $trace['file'] ) ? wp_normalize_path( $trace['file'] ) : '';
+			// get the backtrace, if we can
+			if ( function_exists( 'debug_backtrace' ) ) {
+				if ( version_compare( PHP_VERSION, '5.4.0' ) >= 0 ) {
+					$traces = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT, $backtrace_index );
+				} else {
+					$traces = debug_backtrace( DEBUG_BACKTRACE_PROVIDE_OBJECT );
 				}
 
-				if ( empty( $logger_info['line']  ) ) {
+				$backtrace_index --;
+
+				if ( isset( $traces[ $backtrace_index ] ) ) {
+					$trace                   = $traces[ $backtrace_index ];
+					$logger_info['file']     = isset( $trace['file'] ) ? wp_normalize_path( $trace['file'] ) : '';
 					$logger_info['line']     = isset( $trace['line'] ) ? $trace['line'] : '';
+					$logger_info['function'] = isset( $trace['function'] ) ? $trace['function'] : '';
+					$logger_info['class']    = isset( $trace['class'] ) ? $trace['class'] : '';
+
+					$backtrace_index --;
+					$trace = $traces[ $backtrace_index ];
+
+					if ( empty( $logger_info['file'] ) ) {
+						$logger_info['file'] = isset( $trace['file'] ) ? wp_normalize_path( $trace['file'] ) : '';
+					}
+
+					if ( empty( $logger_info['line'] ) ) {
+						$logger_info['line'] = isset( $trace['line'] ) ? $trace['line'] : '';
+					}
 				}
 			}
 
@@ -220,14 +239,14 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 				$pbci_log_files = get_option( 'pbci_log_files', array() );
 				if ( ! empty( $pbci_log_files ) ) {
 
-					foreach( $pbci_log_files as $log_file_path => $dummy_value  ) {
+					foreach ( $pbci_log_files as $log_file_path => $dummy_value ) {
 						// if logging is turned off, and there is an old log file, make it go away
 						if ( file_exists( $log_file_path ) ) {
 							unlink( $log_file_path );
 						}
 					}
 
-					update_option( 'pbci_log_files' , array() );
+					update_option( 'pbci_log_files', array() );
 				}
 			} else {
 
@@ -246,9 +265,9 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 				$log_file_path = apply_filters( 'pbci_log', $log_file_path );
 
 				$pbci_log_files = get_option( 'pbci_log_files', array() );
-				if ( ! isset( $pbci_log_files[$log_file_path] ) ) {
-					$pbci_log_files[$log_file_path] = true;
-					update_option( 'pbci_log_files' , $pbci_log_files );
+				if ( ! isset( $pbci_log_files[ $log_file_path ] ) ) {
+					$pbci_log_files[ $log_file_path ] = true;
+					update_option( 'pbci_log_files', $pbci_log_files );
 				}
 
 				$msg = $slug;
