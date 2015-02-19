@@ -61,6 +61,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'register_my_plugin' ), 1, 0 );
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'core_settings' ), 2, 0 );
+				add_action( $this->_plugin_slug . '_settings', array( &$this, 'about_help_support' ), 3, 0 );
 				add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
 
 
@@ -257,11 +258,27 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			return $this->_plugin_description;
 		}
 
+		public function settings_menu_parent() {
+			return null;
+		}
+
+		public function settings_page_title() {
+			return 'Settings';
+		}
+
+		public function settings_menu_name() {
+			return 'Settings';
+		}
+
 		function admin_menus() {
-			add_submenu_page( null, 'Settings', 'settings', 'manage_options', $this->_plugin_slug . '_settings', array(
-				&$this,
-				'settings_page'
-			) );
+
+			add_submenu_page(
+				$this->settings_menu_parent(),
+				$this->settings_page_title(),
+				$this->settings_menu_name(),
+				'manage_options',
+				$this->_plugin_slug . '_settings',
+				array( &$this, 'settings_page' ) );
 		}
 
 		function log( $message ) {
@@ -289,7 +306,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						<?php $this->echo_settings_checkbox( 'pbci_logging_is_enabled', false ) ?> Enable Logging
 					</td>
 					<td>
@@ -311,7 +328,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						<?php echo $this->get_plugin_name(); ?> Version:
 					</td>
 					<td>
@@ -323,7 +340,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				<?php foreach( $other_pbci_plugins as $name => $version ) { ?>
 					<?php if ( $name == $this->get_plugin_name() ) { continue; } ?>
 					<tr>
-						<td>
+						<td class="nowrap">
 							<?php echo $name; ?>
 						</td>
 						<td>
@@ -334,7 +351,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				<?php } ?>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						WordPress Version:
 					</td>
 					<td>
@@ -343,7 +360,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						WP-eCommerce Version:
 					</td>
 					<td>
@@ -352,7 +369,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						WP-eCommerce Database Version:
 					</td>
 					<td>
@@ -717,17 +734,27 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					font-weight: bold;
 				}
 
-				table.widefat tr td:first-child {
-					width: 33%;
+				table.widefat tr td {
+					width: auto;
 				}
 
-				table.widefat td:first-child {
+				table.widefat tr td:first-child {
+					/* width: 33%; */
+					width: auto;
+				}
+
+				table.widefat tr td:first-child {
 					font-weight: bold;
 				}
 
 				table.widefat {
 					margin-bottom: 1.5em;
 				}
+
+				td.nowrap {
+					white-space: nowrap;;
+				}
+
 			</style>
 
 			<form method="post">
@@ -746,7 +773,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					</tr>
 
 					<tr>
-						<td>
+						<td class="nowrap">
 							Site URL:
 						</td>
 						<td>
@@ -755,7 +782,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					</tr>
 
 					<tr>
-						<td>
+						<td class="nowrap">
 							Administrator eMail:
 						</td>
 						<td>
@@ -764,7 +791,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					</tr>
 
 					<tr>
-						<td>
+						<td class="nowrap">
 							Your license code:
 						</td>
 						<td>
@@ -781,7 +808,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 					<?php if ( empty( $key ) ) { ?>
 						<tr>
-							<td>
+							<td class="nowrap">
 								Purchase ID:
 							</td>
 							<td>
@@ -796,7 +823,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 						</tr>
 					<?php } else { ?>
 						<tr>
-							<td>
+							<td class="nowrap">
 								Purchase ID:
 							</td>
 							<td>
@@ -846,15 +873,11 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		function about_this_plugin() {
-
+			echo $this->get_plugin_description();
 		}
 
 		function about_help_support() {
 			?>
-
-			<div class="wrap">
-			<?php //pbci_plugin_page_title_box( 'WP-eCommerce Check-Up and Fix-Up', 'snappy' ); ?>
-
 			<table class="widefat">
 				<tr class="pbci-widefat-header-row">
 					<th colspan="2">About <?php echo $this->get_plugin_name(); ?></th>
@@ -868,6 +891,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 				<tr>
 					<td></td>
+					<td></td>
 				</tr>
 
 				<tr class="pbci-widefat-header-row">
@@ -875,13 +899,14 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td colspan="2">
+					<th colspan="2">
 						Please consider the purchase of one of our other plugins. Check our web site for
 						the most current offerings. Below are some popular options.
-					</td>
+					</th>
 				</tr>
 
 				<tr>
+					<td></td>
 					<td></td>
 				</tr>
 
@@ -890,7 +915,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						<img
 							src="<?php echo plugins_url( 'images/pye-brook-logo-pbci-stamps-com-min-128.png', __FILE__ ); ?>"/>
 					</td>
@@ -910,7 +935,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						<img
 							src="<?php echo plugins_url( 'images/pye-brook-logo-wpec-shopper-rewards-128.png', __FILE__ ); ?>"/>
 					</td>
@@ -943,7 +968,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						<img
 							src="<?php echo plugins_url( 'images/pye-brook-logo-free-shipping-pro-128.png', __FILE__ ); ?>"/>
 					</td>
@@ -964,7 +989,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				</tr>
 
 				<tr>
-					<td>
+					<td class="nowrap">
 						<img
 							src="<?php echo plugins_url( 'images/pye-brook-logo-email-wpec-customer-128.png', __FILE__ ); ?>"/>
 					</td>
