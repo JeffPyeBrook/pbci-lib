@@ -38,6 +38,8 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 		private $_remote_plugin_info = null;
 
+		private $_settings_page_hook_suffix = '';
+
 		public function __construct() {
 		}
 
@@ -84,9 +86,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					'get_plugin_name_and_version_filter'
 				), 10, 1 );
 
-				$this->get_license_code();
 			}
-
 		}
 
 		public function get_plugin_name_and_version_filter( $info_array ) {
@@ -172,6 +172,18 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			return get_option( $this->_plugin_slug . '_purchase_id', '' );
 		}
 
+		function register_nag(  ) {
+
+			$plugin_name = $this->get_plugin_name();
+			if ( empty( $plugin_name ) ) {
+				$plugin_name = $this->get_plugin_slug();
+			}
+
+			pbci_admin_nag( 'Please register your ' . $plugin_name . ' plugin  ' . '<a href="options-general.php?page='
+			                . $this->_plugin_slug . '_settings' . '">here</a>.' );
+
+		}
+
 		function license_code( $new_code = '' ) {
 			if ( ! empty( $new_code ) ) {
 				update_option( $this->_plugin_slug . '_key', $new_code );
@@ -179,11 +191,11 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			}
 
 			if ( empty( $this->_license_code ) ) {
-				$this->_license_code = get_option( $this->_plugin_slug . '_key', '' );
+				$this->_license_code = get_option( $this->get_plugin_slug() . '_key', '' );
 			}
 
 			if ( empty( $this->_license_code ) ) {
-				pbci_admin_nag( 'Please register your ' . $this->get_plugin_name() . ' plugin.' );
+				$this->register_nag();
 			}
 
 			return $this->_license_code;
@@ -285,13 +297,21 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 		function admin_menus() {
 
-			add_submenu_page(
+			// set up our menu structure
+			$hook = add_submenu_page(
 				$this->settings_menu_parent(),
 				$this->settings_page_title(),
 				$this->settings_menu_name(),
 				'manage_options',
 				$this->_plugin_slug . '_settings',
 				array( &$this, 'settings_page' ) );
+
+
+			$this->_settings_page_hook_suffix = $hook;
+
+			// need to do this here so that we know wordpress init has been completes
+			$this->get_license_code();
+
 		}
 
 		function log( $message ) {
@@ -813,7 +833,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 						<td>
 							<?php
 							if ( empty( $key ) ) {
-								pbci_admin_nag( 'Please register your ' . $this->get_plugin_name() . ' plugin.' );
+								$this->register_nag();
 								echo '<span style="font-weight: bold; color: red">Not Registered</span>';
 							} else {
 								echo $key;
