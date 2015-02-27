@@ -41,7 +41,7 @@ if ( ! function_exists( 'pbci_about_help_support' ) ) {
 		?>
 
 		<div class="wrap snappy-database-check">
-			<?php pbci_plugin_page_title_box( 'WP-eCommerce Check-Up and Fix-Up', 'snappy' ); ?>
+			<?php //pbci_plugin_page_title_box( 'WP-eCommerce Check-Up and Fix-Up', 'snappy' ); ?>
 
 			<table class="widefat">
 				<tr class="pbci-widefat-header-row">
@@ -68,7 +68,7 @@ if ( ! function_exists( 'pbci_about_help_support' ) ) {
 
 				<tr>
 					<td colspan="2">
-						Instead of asking for donations for the continuting maintenance of this plugin, we ask that you
+						Instead of asking for donations for the continuing maintenance of this plugin, we ask that you
 						support
 						our by effort by considering the purchase of one of our other plugins. Check our web site for
 						the most
