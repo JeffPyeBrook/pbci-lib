@@ -54,6 +54,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					$this->_logster = new pbciLog( $this->_plugin_slug, dirname( $this->_plugin_file ) );
 				}
 			}
+
 			if ( is_admin() ) {
 
 				$this->_settings_page_link = '<a href="options-general.php?page='
@@ -62,8 +63,8 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'register_my_plugin' ), 1, 0 );
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'core_settings' ), 2, 0 );
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'about_help_support' ), 3, 0 );
-				add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
 
+				add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
 
 				add_filter( 'pbci_get_plugin_information', array( &$this, 'get_plugin_information' ), 10, 1 );
 				add_filter( 'pbci_validate_license_key', array( &$this, 'validate_license_key' ), 10, 2 );
@@ -82,7 +83,10 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					&$this,
 					'get_plugin_name_and_version_filter'
 				), 10, 1 );
+
+				$this->get_license_code();
 			}
+
 		}
 
 		public function get_plugin_name_and_version_filter( $info_array ) {
@@ -178,6 +182,10 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				$this->_license_code = get_option( $this->_plugin_slug . '_key', '' );
 			}
 
+			if ( empty( $this->_license_code ) ) {
+				pbci_admin_nag( 'Please register your ' . $this->get_plugin_name() . ' plugin.' );
+			}
+
 			return $this->_license_code;
 		}
 
@@ -234,7 +242,12 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 		function get_plugin_data_from_file() {
 			if ( empty( $this->_plugin_data ) ) {
-				$this->_plugin_data = get_plugin_data( $this->_plugin_file, false, false );
+				// check for get_plugin_data being defined just in case this function was called too early
+				if ( function_exists( 'get_plugin_data' ) ) {
+					$this->_plugin_data = get_plugin_data( $this->_plugin_file, false, false );
+				} else {
+					$this->_logster->log( 'ERROR: get_plugin_data not defined, something was called too early or was an admin only function was called from user context?' );
+				}
 			}
 
 			return $this->_plugin_data;
@@ -427,6 +440,10 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			do_action( 'after_' . $this->_plugin_slug . '_settings' );
 
 			$this->about_help_support();
+		}
+
+		function settings() {
+
 		}
 
 
@@ -796,7 +813,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 						<td>
 							<?php
 							if ( empty( $key ) ) {
-								pbci_admin_nag( "Please register your plugin." );
+								pbci_admin_nag( 'Please register your ' . $this->get_plugin_name() . ' plugin.' );
 								echo '<span style="font-weight: bold; color: red">Not Registered</span>';
 							} else {
 								echo $key;
