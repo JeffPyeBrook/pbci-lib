@@ -86,6 +86,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					'get_plugin_name_and_version_filter'
 				), 10, 1 );
 
+				add_action( 'wp_update_plugins', array( &$this, 'is_plugin_update_available' ) );
 			}
 		}
 
@@ -463,9 +464,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		function settings() {
-
 		}
-
 
 		function collect_settings() {
 			ob_start();
@@ -567,8 +566,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				} else {
 					$remote_version = '';
 				}
-
-				$remote_version = '8.0';
 
 				$current_version = $this->get_plugin_version();
 				if ( version_compare( $current_version, $remote_version, '<' ) ) {

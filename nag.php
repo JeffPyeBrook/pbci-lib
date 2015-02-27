@@ -169,8 +169,13 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 
 			if ( isset( $messages[ $message_id ] ) ) {
 				unset( $messages[ $message_id ] );
-				update_option( __CLASS__, $messages );
+				if ( empty( $messages ) ) {
+					delete_option( __CLASS__ );
+				} else {
+					update_option( __CLASS__, $messages );
+				}
 			}
+
 
 			wp_send_json_success( true );
 		}
