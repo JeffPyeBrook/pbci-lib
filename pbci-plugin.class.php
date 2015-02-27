@@ -85,8 +85,9 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				), 10, 1 );
 
 				$this->get_license_code();
-			}
 
+				add_action( 'wp_update_plugins', array( &$this, 'is_plugin_update_available' ) );
+			}
 		}
 
 		public function get_plugin_name_and_version_filter( $info_array ) {
@@ -752,7 +753,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				}
 
 				table.widefat tr td:first-child {
-					/* width: 33%; */
 					width: auto;
 				}
 
