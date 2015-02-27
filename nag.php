@@ -29,8 +29,13 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 
 		static $instance = null;
 
-		function __construct() {
+		public static function get_instance() {
+			if ( ! self::$instance ) {
+				self::$instance = new self;
+			}
+		}
 
+		function __construct() {
 			if ( ! self::$instance ) {
 				self::$instance = $this;
 				if ( is_admin() ) {
@@ -176,7 +181,7 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		static $pbci_admin_notifications = null;
 
 		if ( empty( $pbci_admin_notifications ) ) {
-			$pbci_admin_notifications = new PBCI_Admin_Notifications();
+			$pbci_admin_notifications = PBCI_Admin_Notifications::get_instance();
 		}
 
 		$pbci_admin_notifications->new_message( $messages );

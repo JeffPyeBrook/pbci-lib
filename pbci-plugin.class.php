@@ -739,7 +739,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				}
 
 				table.widefat tr td:first-child {
-					/* width: 33%; */
 					width: auto;
 				}
 
