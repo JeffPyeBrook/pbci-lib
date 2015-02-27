@@ -27,7 +27,16 @@
 if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 	class PBCI_Admin_Notifications {
 
-		static $instance = null;
+		protected static $instance = null;
+
+		public static function get_instance() {
+
+			if ( null == self::$instance ) {
+				self::$instance = new self;
+			}
+
+			return self::$instance;
+		}
 
 		function __construct() {
 
@@ -173,19 +182,14 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 	 * @param string|array[string] $messages admin the messages(nags) to show
 	 */
 	function pbci_admin_nag( $messages ) {
-		static $pbci_admin_notifications = null;
-
-		if ( empty( $pbci_admin_notifications ) ) {
-			$pbci_admin_notifications = new PBCI_Admin_Notifications();
-		}
-
+		$pbci_admin_notifications = PBCI_Admin_Notifications::get_instance();
 		$pbci_admin_notifications->new_message( $messages );
 	}
 
 
 // If we are showing an admin page we want to show the admin nags
 	if ( is_admin() ) {
-		$pbci_admin_notifications = new PBCI_Admin_Notifications();
+		$pbci_admin_notifications = PBCI_Admin_Notifications::get_instance();
 	}
 
 }
