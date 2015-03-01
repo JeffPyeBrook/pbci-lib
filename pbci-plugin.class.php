@@ -93,7 +93,10 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		public function get_plugin_name_and_version_filter( $info_array ) {
-			$info_array[ $this->get_plugin_name() ] = $this->get_plugin_version();
+			$info_array[ $this->get_plugin_slug() ] = array(
+				'version' => $this->get_plugin_version(),
+				'name' => $this->get_plugin_name()
+			);
 
 			return $info_array;
 		}
@@ -386,39 +389,39 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					</td>
 				</tr>
 
-				<?php $all_assets = $this->get_all_assets(); ?>
+				<?php $all_assets = $this->get_all_assets_information(); ?>
 
 				<?php $other_pbci_plugins = apply_filters( 'pbci_plugin_name_and_version', array() ); ?>
-				<?php foreach ( $other_pbci_plugins as $name => $version ) { ?>
-					<?php if ( $name == $this->get_plugin_name() ) {
+				<?php foreach ( $other_pbci_plugins as $slug => $info ) { ?>
+					<?php if ( $slug == $this->get_plugin_slug() ) {
 						continue;
 					} ?>
 					<tr>
 						<td class="nowrap">
-							<?php if ( isset( $all_assets[$name] ) ) { ?>
-								<a href="<?php echo esc_url( $all_assets[$name] ); ?>">
-									<?php echo $name; ?>
+							<?php if ( isset( $all_assets[$slug] ) ) { ?>
+								<a href="<?php echo esc_url(  $info['name'] ); ?>">
+									<?php echo $info['name']; ?>
 								</a>
 							<?php } else { ?>
-								<?php echo $name; ?>
-								<?php  unset( $all_assets[$name] ); ?>
+								<?php echo $info['name']; ?>
+								<?php  unset( $info[$slug] ); ?>
 							<?php } ?>
 						</td>
 						<td>
-							<?php echo $version; ?>
+							<?php echo $info['version']; ?>
 						</td>
 					</tr>
 				<?php } ?>
 
-				<?php foreach ( $all_assets as $name => $url ) { ?>
-					<?php if ( $name == $this->get_plugin_name() ) {
+				<?php foreach ( $all_assets as $slug => $info ) { ?>
+					<?php if ( $info['name'] == $this->get_plugin_name() ) {
 						continue;
 					} ?>
 					<tr>
 						<td class="nowrap">
-							<?php if ( isset( $all_assets[$name] ) ) { ?>
-								<a href="<?php echo esc_url( $all_assets[$name] ); ?>">
-									<?php echo $name; ?>
+							<?php if ( isset( $info['name'] ) ) { ?>
+								<a href="<?php echo esc_url( $info['name'] ); ?>">
+									<?php echo $info['name']; ?>
 								</a>
 							<?php } ?>
 						</td>
@@ -521,21 +524,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		function are_we_testing() {
-			$we_are_testing = false;
-
-			if ( false !== strpos( $_SERVER['HTTP_HOST'], '.local' ) ) {
-				$we_are_testing = true;
-			}
-
-			if ( false !== strpos( $_SERVER['SERVER_ADDR'], '192.168.1.' ) ) {
-				$we_are_testing = true;
-			}
-
-			if ( false !== strpos( $_SERVER['SERVER_ADDR'], '127.0.0.1' ) ) {
-				$we_are_testing = true;
-			}
-
-			return $we_are_testing;
+			return (bool)apply_filters( 'pbci_plugin_are_we_testing', false );
 		}
 
 		private function get_store_name() {
@@ -553,7 +542,37 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			return trailingslashit( $store_uri );
 		}
 
-		private function get_all_assets() {
+		private function get_all_assets_information() {
+			$request = $this->get_request_required_attributes( 'pbci_get_assets_info' );
+
+			if ( $this->are_we_testing() ) {
+				$cookies   = array();
+				$cookies[] = new WP_Http_Cookie( array( 'name' => 'XDEBUG_SESSION', 'value' => 'PHPSTORM' ) );
+			} else {
+				$cookies = array();
+			}
+
+			$url      = $this->get_update_path();
+			$response = wp_remote_post( $url, array( 'body' => $request, 'cookies' => $cookies, ) );
+
+			if ( ! is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) === 200 ) {
+				$response = maybe_unserialize( $response ['body'] );
+				if ( isset( $response['message'] ) ) {
+					pbci_admin_nag( $response['message'] . '<br>' . $this->plugin_settings_link() );
+				}
+
+				if ( isset( $response['all_assets_info'] ) && is_array( $response['all_assets_info'] ) ) {
+					self::$_all_assets = $response['all_assets_info'];
+				}
+
+			}
+
+			if ( is_wp_error( $response ) ) {
+				$error_message = $response->get_error_message();
+				pbci_admin_nag( "Something went wrong: $error_message" );
+				error_log( "Something went wrong: $error_message" );
+			}
+
 			if ( ! is_array( self::$_all_assets ) ) {
 				self::$_all_assets = array();
 			}
@@ -562,7 +581,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		private function get_update_path() {
-			if ( false && $this->are_we_testing() ) {
+			if ( $this->are_we_testing() ) {
 				$this->_update_path = 'http://' . 'pyebrook.local' . '/wp-admin/admin-ajax.php';
 			} else {
 				$this->_update_path = 'http://' . get_option( 'pbci_update_domain', 'www.pyebrook.com' )
@@ -579,7 +598,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			$request['purchase_id'] = empty( $_REQUEST['pbci_purchase_id'] )
 				? '' : absint( $_REQUEST['pbci_purchase_id'] );
 
-			if ( false && $this->are_we_testing() ) {
+			if ( $this->are_we_testing() ) {
 				$cookies   = array();
 				$cookies[] = new WP_Http_Cookie( array( 'name' => 'XDEBUG_SESSION', 'value' => 'PHPSTORM' ) );
 			} else {
@@ -634,8 +653,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				} else {
 					$remote_version = '';
 				}
-
-				$remote_version = 9.0;
 
 				$current_version = $this->get_plugin_version();
 				if ( version_compare( $current_version, $remote_version, '<' ) ) {
