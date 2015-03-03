@@ -95,7 +95,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		public function get_plugin_name_and_version_filter( $info_array ) {
 			$info_array[ $this->get_plugin_slug() ] = array(
 				'version' => $this->get_plugin_version(),
-				'name' => $this->get_plugin_name()
+				'name'    => $this->get_plugin_name()
 			);
 
 			return $info_array;
@@ -398,13 +398,13 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 					} ?>
 					<tr>
 						<td class="nowrap">
-							<?php if ( isset( $all_assets[$slug] ) ) { ?>
-								<a href="<?php echo esc_url(  $info['name'] ); ?>">
+							<?php if ( isset( $all_assets[ $slug ] ) ) { ?>
+								<a href="<?php echo esc_url( $info['name'] ); ?>">
 									<?php echo $info['name']; ?>
 								</a>
 							<?php } else { ?>
 								<?php echo $info['name']; ?>
-								<?php  unset( $info[$slug] ); ?>
+								<?php unset( $info[ $slug ] ); ?>
 							<?php } ?>
 						</td>
 						<td>
@@ -461,7 +461,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				<?php $this->echo_save_settings_row(); ?>
 
 			</table>
-			<?php
+		<?php
 		}
 
 		function echo_save_settings_row() {
@@ -524,11 +524,11 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		function are_we_testing() {
-			return (bool)apply_filters( 'pbci_plugin_are_we_testing', false );
+			return (bool) apply_filters( 'pbci_plugin_are_we_testing', false );
 		}
 
 		private function get_store_name() {
-			return get_option( 'pbci_update_store_name', 'Pye Brook Company, Inc.' ); ;
+			return get_option( 'pbci_update_store_name', 'Pye Brook Company, Inc.' );;
 		}
 
 		private function get_store_uri() {
@@ -666,26 +666,27 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 					// Get the upgrade notice for the new plugin version.
 					$update_notice = 'An upgrade for ' . $this->get_plugin_name()
-					          . ' from version ' . $current_version
-					          . ' to version ' . $remote_version
-					          . ' is available.';
+					                 . ' from version ' . $current_version
+					                 . ' to version ' . $remote_version
+					                 . ' is available.';
 
 					$update_notice .= '<br>You can downlaod the plugin upgrade from <a href="'
-					                      . $this->get_package_uri()
-						                  . '"> '
-										  . $this->get_store_name()
-										  .	'</a>';
+					                  . $this->get_package_uri()
+					                  . '"> '
+					                  . $this->get_store_name()
+					                  . '</a>';
 
 					if ( isset( $remote_information['user_account_url'] )
-					        &&   isset( $remote_information['store_url'] )
-					            &&  isset( $remote_information['store_name'] ) ) {
+					     && isset( $remote_information['store_url'] )
+					     && isset( $remote_information['store_name'] )
+					) {
 
 						$update_notice .= '<br>You can access all of your purchases at <a href="'
-						                 . $remote_information['user_account_url']
-						                 . '">your personal downloads page</a> on <a href="'
-						                 . $remote_information['store_url']
-						                 . '">'
-						                 . $remote_information['store_name'];
+						                  . $remote_information['user_account_url']
+						                  . '">your personal downloads page</a> on <a href="'
+						                  . $remote_information['store_url']
+						                  . '">'
+						                  . $remote_information['store_name'];
 					}
 
 					// Get the upgrade notice for the new plugin version.
@@ -712,7 +713,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		}
 
 		private function get_package_uri() {
-			$params = $this->get_request_required_attributes();
+			$params            = $this->get_request_required_attributes();
 			$params['package'] = $this->get_plugin_slug();
 
 			$url = add_query_arg( $params, $this->get_store_uri() );
@@ -743,13 +744,13 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			if ( ! empty( $required ['key'] ) ) {
 				$required ['unique_client_key'] =
 					hash_hmac(
-								'md5',
-								$s = $required ['site_url'] . $required ['slug'],
-								$required ['key']
-							);
+						'md5',
+						$s = $required ['site_url'] . $required ['slug'],
+						$required ['key']
+					);
 			}
 
-			error_log( 'set unique client key ' .  $s . ' turned into ' . $required ['unique_client_key'] );
+			error_log( 'set unique client key ' . $s . ' turned into ' . $required ['unique_client_key'] );
 
 			return $required;
 		}
@@ -1235,8 +1236,9 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
 		}
 
-		private function get_dashboard_news_feed_url() {
-			$feed_url   = 'http://www.pyebrook.com/tag/plugin-news/feed/?donotcachepage=76fbf08c731642f0ade0fbcc4ecfb31e';
+		function get_dashboard_news_feed_url() {
+			$feed_url = 'http://www.pyebrook.com/tag/plugin-news/feed/?donotcachepage=76fbf08c731642f0ade0fbcc4ecfb31e';
+
 			return $feed_url;
 		}
 
@@ -1247,14 +1249,21 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		 * @uses wp_widget_rss_output()   Display the RSS entries in a list
 		 */
 		function pbci_dashboard_news() {
-			add_filter( 'wp_feed_options', array( &$this, 'pbci_dashboard_news_feed_options' ), 10, 2 );
 
-			$feed_url = $this->get_dashboard_news_feed_url();
+				add_filter( 'wp_feed_options', array( &$this, 'pbci_dashboard_news_feed_options' ), 10, 2 );
 
-			$rss        = fetch_feed( $feed_url );
-			$args       = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 5 );
-			wp_widget_rss_output( $rss, $args );
+				$feed_url = $this->get_dashboard_news_feed_url();
+
+				$rss = get_transient( 'pbci-news-rss' );
+				if ( ! $rss ) {
+					$rss  = fetch_feed( $feed_url );
+					set_transient( 'pbci-news-rss', $rss , 30*60 );
+				}
+
+				$args = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 5 );
+				wp_widget_rss_output( $rss, $args );
 		}
+
 
 		function pbci_dashboard_news_feed_options( &$feed, $url ) {
 			$our_feed_url = $this->get_dashboard_news_feed_url();
