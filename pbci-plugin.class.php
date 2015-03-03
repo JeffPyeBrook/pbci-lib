@@ -1089,6 +1089,11 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
 		}
 
+		private function get_dashboard_news_feed_url() {
+			$feed_url   = 'http://www.pyebrook.com/tag/plugin-news/feed/?donotcachepage=76fbf08c731642f0ade0fbcc4ecfb31e';
+			return $feed_url;
+		}
+
 		/**
 		 * Shows the RSS feed for the WPEC dashboard widget
 		 *
@@ -1096,12 +1101,23 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		 * @uses wp_widget_rss_output()   Display the RSS entries in a list
 		 */
 		function pbci_dashboard_news() {
-			$feed_url   = 'http://www.pyebrook.com/tag/plugin-news/feed/?donotcachepage=76fbf08c731642f0ade0fbcc4ecfb31e';
+			add_filter( 'wp_feed_options', array( &$this, 'pbci_dashboard_news_feed_options' ), 10, 2 );
+
+			$feed_url = $this->get_dashboard_news_feed_url();
+
 			$rss        = fetch_feed( $feed_url );
-			$rss->cache = false;
 			$args       = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 5 );
 			wp_widget_rss_output( $rss, $args );
 		}
+
+		function pbci_dashboard_news_feed_options( &$feed, $url ) {
+			$our_feed_url = $this->get_dashboard_news_feed_url();
+			if ( $our_feed_url == $url ) {
+				$feed->cache = false;
+				remove_filter( 'wp_feed_options', array( &$this, 'pbci_dashboard_news_feed_options' ), 10 );
+			}
+		}
+
 
 	}
 
