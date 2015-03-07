@@ -56,7 +56,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 			}
 
 			if ( is_admin() ) {
-
 				$this->_settings_page_link = '<a href="options-general.php?page='
 				                             . $this->_plugin_slug . '_settings' . '">Settings</a>';
 
