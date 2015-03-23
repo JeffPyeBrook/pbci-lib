@@ -1,33 +1,37 @@
 <?php
 /*
-** Copyright 2010-2014, Pye Brook Company, Inc.
+** Copyright 2010-2015, Pye Brook Company, Inc.
 **
 **
-** This software is provided under the GNU General Public License, version 2 (GPLv2), that covers its  copying,
-** distribution and modification. The GPLv2 license specifically states that it only covers only copying,
-** distribution and modification activities. The GPLv2 further states that all other activities are outside of the
-** scope of the GPLv2.
+** This software is provided under the GNU General Public License, version
+** 2 (GPLv2), that covers its  copying, distribution and modification. The 
+** GPLv2 license specifically states that it only covers only copying,
+** distribution and modification activities. The GPLv2 further states that 
+** all other activities are outside of the scope of the GPLv2.
 **
-** All activities outside the scope of the GPLv2 are covered by the Pye Brook Company, Inc. License. Any right
-** not explicitly granted by the GPLv2, and not explicitly granted by the Pye Brook Company, Inc. License are reserved
+** All activities outside the scope of the GPLv2 are covered by the Pye Brook
+** Company, Inc. License. Any right not explicitly granted by the GPLv2, and 
+** not explicitly granted by the Pye Brook Company, Inc. License are reserved
 ** by the Pye Brook Company, Inc.
 **
 ** This software is copyrighted and the property of Pye Brook Company, Inc.
 **
 ** Contact Pye Brook Company, Inc. at info@pyebrook.com for more information.
 **
-** This program is distributed in the hope that it will be useful, but WITHOUT ANY
-** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-** A PARTICULAR PURPOSE.
+** This program is distributed in the hope that it will be useful, but WITHOUT ANY 
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+** A PARTICULAR PURPOSE. 
 **
 */
 
 
-
 if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
+
 	class PBCI_Admin_Notifications {
 
 		protected static $instance = null;
+		protected static $option_name = 'pbci_admin_notifications';
+		protected static $messages = array();
 
 		public static function get_instance() {
 
@@ -38,10 +42,37 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 			return self::$instance;
 		}
 
+		private static function get_saved_notifications() {
+			$messages = get_option( self::$option_name, array() );
+
+			if ( ! is_array( $messages ) ) {
+				$messages = array();
+			}
+
+			return $messages;
+		}
+
+		private static function save_notifications() {
+			if ( empty( self::$messages ) ) {
+				update_option( self::$option_name, self::$messages );
+				delete_option( self::$option_name );
+				self::$messages = get_option( self::$option_name, array() );
+				error_log( 'DUMP2: ' . var_export( self::$messages ) );
+			} else {
+				update_option( self::$option_name, self::$messages );
+			}
+
+			return self;
+		}
+
+
 		function __construct() {
 
 			if ( ! self::$instance ) {
 				self::$instance = $this;
+
+				self::$messages = self::get_saved_notifications();
+
 				if ( is_admin() ) {
 					add_action( 'admin_notices', array( $this, 'show_messages' ) );
 					add_action( 'wp_ajax_pbci_dismiss_admin_msg', array( $this, 'dismiss_msg' ) );
@@ -54,7 +85,7 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		 *
 		 * @param string|array[string] $new_messages to show to the admin
 		 */
-		function new_message( $new_messages ) {
+		static function new_message( $new_messages ) {
 
 			if ( empty ( $new_messages ) )
 				return;
@@ -63,27 +94,27 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 				$new_messages = array( $new_messages );
 			}
 
-			$messages            = get_option( __CLASS__, array() );
 			$save_admin_messages = false;
 
 			foreach ( $new_messages as $new_message ) {
 				// using the hash key is an easy way of preventing duplicate messages
 				$id = md5( $new_message );
 
-				if ( ! isset( $messages[ $id ] ) ) {
-					$messages[ $id ]     = $new_message;
+				error_log( 'NEW NAG: ' . $id . ' => ' . $new_message );
+
+				if ( ! isset( self::$messages[ $id ] ) ) {
+					self::$messages[ $id ]     = $new_message;
 					$save_admin_messages = true;
 				}
 			}
 
 			// only save the admin messages if they have been updated
 			if ( $save_admin_messages ) {
-				update_option( __CLASS__, $messages );
+				self::save_notifications();
 			}
 
 			if ( did_action( 'admin_notices' ) ) {
-				$pbci_admin_notifications = new PBCI_Admin_Notifications();
-				$pbci_admin_notifications->show_messages();
+				self::show_messages();
 			}
 		}
 
@@ -92,8 +123,8 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		 *
 		 * @since 3.8.14.1
 		 */
-		function show_messages() {
-			$messages = get_option( __CLASS__, array() );
+		static function show_messages() {
+			$messages = self::get_saved_notifications();
 
 			static $script_already_sent = false;
 			static $already_displayed = array();
@@ -131,11 +162,13 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 				$script_already_sent = true;
 			}
 
-			foreach ( $messages as $id => $message ) {
+			foreach ( self::$messages as $id => $message ) {
 				if ( in_array( $id, $already_displayed ) )
 					continue;
 
 				$already_displayed[] = $id;
+
+				error_log( 'SHOW NAG: ' . $id . ' => ' . $message );
 
 				?>
 				<div class="updated pbci-admin-message" id="pbci-admin-message-<?php echo esc_attr( $id ); ?>">
@@ -158,24 +191,27 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		 *
 		 * @param string|bool $message_id the unique message id to be dismissed
 		 */
-		function dismiss_msg( $message_id = false ) {
+		static function dismiss_msg( $message_id = false ) {
 			if ( ! $message_id ) {
 				if ( isset( $_REQUEST['id'] ) ) {
 					$message_id = $_REQUEST['id'];
 				}
 			}
 
-			$messages = get_option( __CLASS__, array() );
+			if ( isset( self::$messages[ $message_id ] ) ) {
+				error_log( 'DISMISS NAG: ' . $message_id . ' => ' . self::$messages[ $message_id ] );
+				error_log( var_export( self::$messages ) );
 
-			if ( isset( $messages[ $message_id ] ) ) {
-				unset( $messages[ $message_id ] );
+				unset( self::$messages[ $message_id ] );
 				if ( empty( $messages ) ) {
+					update_option( __CLASS__, self::$messages );
 					delete_option( __CLASS__ );
+					$messages = get_option( __CLASS__, array() );
+					error_log( 'DUMP2: ' . var_export( self::$messages ) );
 				} else {
-					update_option( __CLASS__, $messages );
+					update_option( __CLASS__, self::$messages );
 				}
 			}
-
 
 			wp_send_json_success( true );
 		}
@@ -188,11 +224,10 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 	 */
 	function pbci_admin_nag( $messages ) {
 		$pbci_admin_notifications = PBCI_Admin_Notifications::get_instance();
-		$pbci_admin_notifications->new_message( $messages );
+		$pbci_admin_notifications::new_message( $messages );
 	}
 
-
-// If we are showing an admin page we want to show the admin nags
+	// If we are showing an admin page we want to show the admin nags
 	if ( is_admin() ) {
 		$pbci_admin_notifications = PBCI_Admin_Notifications::get_instance();
 	}
