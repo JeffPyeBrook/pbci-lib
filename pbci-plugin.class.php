@@ -392,6 +392,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				<?php $all_assets = $this->get_all_assets_information(); ?>
 
 				<?php $other_pbci_plugins = apply_filters( 'pbci_plugin_name_and_version', array() ); ?>
+
 				<?php foreach ( $other_pbci_plugins as $slug => $info ) { ?>
 					<?php if ( $slug == $this->get_plugin_slug() ) {
 						continue;
@@ -402,9 +403,9 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 								<a href="<?php echo esc_url(  $info['name'] ); ?>">
 									<?php echo $info['name']; ?>
 								</a>
+								<?php  unset( $all_assets[$slug] ); ?>
 							<?php } else { ?>
 								<?php echo $info['name']; ?>
-								<?php  unset( $info[$slug] ); ?>
 							<?php } ?>
 						</td>
 						<td>
@@ -564,7 +565,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				if ( isset( $response['all_assets_info'] ) && is_array( $response['all_assets_info'] ) ) {
 					self::$_all_assets = $response['all_assets_info'];
 				}
-
 			}
 
 			if ( is_wp_error( $response ) ) {
