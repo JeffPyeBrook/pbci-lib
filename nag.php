@@ -147,7 +147,7 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 							$.ajax({
 								type: "post",
 								dataType: "text",
-								url: "<?php echo admin_url( 'admin-ajax.php' );?>",
+								url: "<?php echo admin_url( 'admin-ajax.php', 'relative' );?>",
 								data: {action: "pbci_dismiss_admin_msg", id: id}
 							});
 						}
