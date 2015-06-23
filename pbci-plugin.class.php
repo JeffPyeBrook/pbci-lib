@@ -116,26 +116,26 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 
 			wp_register_style( 'toastr', $toastr_css );
 			wp_enqueue_style( 'toastr' );
-
-			wp_register_script(
-				'pbci-lib',
-				plugins_url( 'script/pbci-lib.js', __FILE__ ),
-				array( 'jquery', 'toastr' ),
-				false,
-				false
-			);
-
-			wp_localize_script(
-				'pbci-lib',
-				'pbcilib',
-				array(
-					'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
-					'nonce'   => wp_create_nonce( 'pyebrookcompanyinc' ),
-					'debug'   => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				)
-			);
-
-			wp_enqueue_script( 'pbci-lib' );
+//
+//			wp_register_script(
+//				'pbci-lib',
+//				plugins_url( 'script/pbci-lib.js', __FILE__ ),
+//				array( 'jquery', 'toastr' ),
+//				false,
+//				false
+//			);
+//
+//			wp_localize_script(
+//				'pbci-lib',
+//				'pbcilib',
+//				array(
+//					'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
+//					'nonce'   => wp_create_nonce( 'pyebrookcompanyinc' ),
+//					'debug'   => defined( 'WP_DEBUG' ) && WP_DEBUG,
+//				)
+//			);
+//
+//			wp_enqueue_script( 'pbci-lib' );
 
 			wp_enqueue_script( 'heartbeat' );
 
