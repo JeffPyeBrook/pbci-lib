@@ -111,7 +111,8 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 				$toastr_css = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css';
 			}
 
-			wp_register_script( 'toastr', $toastr_js, array( 'jquery' ), false, false );
+			$ver = 'latest';
+			wp_register_script( 'toastr', $toastr_js, array( 'jquery' ), $ver, true );
 			wp_enqueue_script( 'toastr' );
 
 			wp_register_style( 'toastr', $toastr_css );
@@ -1327,6 +1328,6 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 
 	}
 
-	pbci_log( 'pbci-plugin ' . __CLASS__ . ' being loaded from ' . __FILE__ );
+	//pbci_log( 'pbci-plugin ' . __CLASS__ . ' being loaded from ' . __FILE__ );
 
 }
