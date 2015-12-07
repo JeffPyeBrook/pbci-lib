@@ -1276,6 +1276,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 	}
 
-	pbci_log( 'pbci-plugin ' . __CLASS__ . ' being loaded from ' . __FILE__ );
+//	pbci_log( 'pbci-plugin ' . __CLASS__ . ' being loaded from ' . __FILE__ );
 
 }
