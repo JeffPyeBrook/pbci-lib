@@ -24,8 +24,8 @@
 **
 */
 
-if ( ! class_exists( 'pbciPluginV2' ) ) {
-	class pbciPluginV2 {
+if ( ! class_exists( 'pbciPluginV3' ) ) {
+	class pbciPluginV3 {
 
 		private $_plugin_slug = '';
 		private $_plugin_file = '';
@@ -47,6 +47,10 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 		public function init( $file ) {
 
+			if ( ! has_action( 'wp_enqueue_scripts', array( __CLASS__, 'wp_enqueue_scripts' ) ) ) {
+				add_action( 'wp_enqueue_scripts', array( __CLASS__, 'wp_enqueue_scripts' ) );
+			}
+
 			$this->_plugin_file = $file;
 			$this->_plugin_slug = basename( dirname( $file ) );
 
@@ -59,6 +63,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				}
 			}
 
+
 			if ( is_admin() ) {
 				$this->_settings_page_link = '<a href="options-general.php?page='
 				                             . $this->_plugin_slug . '_settings' . '">Settings</a>';
@@ -67,7 +72,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'core_settings' ), 2, 0 );
 				add_action( $this->_plugin_slug . '_settings', array( &$this, 'about_help_support' ), 3, 0 );
 
-				add_action( 'admin_menu', array( &$this, 'admin_menus' ) );
+				add_action( 'admin_menu', array( &$this, 'admin_menus' ) , 20);
 
 				add_filter( 'pbci_get_plugin_information', array( &$this, 'get_plugin_information' ), 10, 1 );
 				add_filter( 'pbci_validate_license_key', array( &$this, 'validate_license_key' ), 10, 2 );
@@ -90,6 +95,53 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 				add_action( 'wp_update_plugins', array( &$this, 'is_plugin_update_available' ) );
 			}
 		}
+
+		static function wp_enqueue_scripts() {
+			static $did_this_already = false;
+
+			if ( $did_this_already ) {
+				return;
+			}
+
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$toastr_js  = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.js';
+				$toastr_css = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.css';
+			} else {
+				$toastr_js  = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js';
+				$toastr_css = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css';
+			}
+
+			$ver = 'latest';
+			wp_register_script( 'toastr', $toastr_js, array( 'jquery' ), $ver, true );
+			wp_enqueue_script( 'toastr' );
+
+			wp_register_style( 'toastr', $toastr_css );
+			wp_enqueue_style( 'toastr' );
+//
+//			wp_register_script(
+//				'pbci-lib',
+//				plugins_url( 'script/pbci-lib.js', __FILE__ ),
+//				array( 'jquery', 'toastr' ),
+//				false,
+//				false
+//			);
+//
+//			wp_localize_script(
+//				'pbci-lib',
+//				'pbcilib',
+//				array(
+//					'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
+//					'nonce'   => wp_create_nonce( 'pyebrookcompanyinc' ),
+//					'debug'   => defined( 'WP_DEBUG' ) && WP_DEBUG,
+//				)
+//			);
+//
+//			wp_enqueue_script( 'pbci-lib' );
+
+			wp_enqueue_script( 'heartbeat' );
+
+		}
+
 
 		public function get_plugin_name_and_version_filter( $info_array ) {
 			$info_array[ $this->get_plugin_slug() ] = array(
@@ -319,7 +371,7 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 			$this->_settings_page_hook_suffix = $hook;
 
-			// need to do this here so that we know wordpress init has been completes
+			// need to do this here so that we know wordpress init has been completed
 			$this->get_license_code();
 
 		}
@@ -1250,18 +1302,18 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 		 */
 		function pbci_dashboard_news() {
 
-				add_filter( 'wp_feed_options', array( &$this, 'pbci_dashboard_news_feed_options' ), 10, 2 );
+			add_filter( 'wp_feed_options', array( &$this, 'pbci_dashboard_news_feed_options' ), 10, 2 );
 
-				$feed_url = $this->get_dashboard_news_feed_url();
+			$feed_url = $this->get_dashboard_news_feed_url();
 
-				$rss = get_transient( 'pbci-news-rss' );
-				if ( ! $rss ) {
-					$rss  = fetch_feed( $feed_url );
-					set_transient( 'pbci-news-rss', $rss , 30*60 );
-				}
+			$rss = get_transient( 'pbci-news-rss' );
+			if ( ! $rss ) {
+				$rss = fetch_feed( $feed_url );
+				set_transient( 'pbci-news-rss', $rss, 30 * 60 );
+			}
 
-				$args = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 5 );
-				wp_widget_rss_output( $rss, $args );
+			$args = array( 'show_author' => 1, 'show_date' => 1, 'show_summary' => 1, 'items' => 5 );
+			wp_widget_rss_output( $rss, $args );
 		}
 
 
@@ -1276,6 +1328,6 @@ if ( ! class_exists( 'pbciPluginV2' ) ) {
 
 	}
 
-	pbci_log( 'pbci-plugin ' . __CLASS__ . ' being loaded from ' . __FILE__ );
+//	pbci_log( 'pbci-plugin ' . __CLASS__ . ' being loaded from ' . __FILE__ );
 
 }
