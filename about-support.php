@@ -38,6 +38,7 @@ if ( ! function_exists( 'pbci_news' ) ) {
 
 if ( ! function_exists( 'pbci_about_help_support' ) ) {
 	function pbci_about_help_support() {
+		error_log( __FUNCTION__ );
 		?>
 
 		<div class="wrap snappy-database-check">
