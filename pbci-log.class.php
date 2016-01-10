@@ -76,11 +76,19 @@ if ( ! class_exists( 'pbciLogV2' ) ) {
 		function __construct( $slug = '' ) {
 			$this->_slug         = $slug;
 			$upload_dir          = wp_upload_dir();
-			$this->_log_file_dir = trailingslashit( $upload_dir['basedir'] );
-			$this->_log_file     = $this->_log_file_dir . $this->_slug . '. log';
-			$this->_log_file_url = trailingslashit( $upload_dir['baseurl'] ) . $this->_slug . 'pbci.log';
-			add_action( 'template_redirect', array( &$this, 'load_log_file' ) );
 
+			if ( ( defined( WP_DEBUG ) && WP_DEBUG ) || ( false !== stripos( $_SERVER['HTTP_HOST'], 'local' ) || empty( $this->slug ) ) ) {
+				$this->_log_file  = ini_get('error_log');
+				$this->_use_php_error_log = true;
+				$this->_log_file_url = '';
+			} else {
+				$this->_log_file_dir = trailingslashit( $upload_dir['basedir'] );
+				$this->_log_file     = $this->_log_file_dir . $this->_slug . 'pbci.log';
+				$this->_log_file_url = trailingslashit( $upload_dir['baseurl'] ) . $this->_slug . 'pbci.log';
+				$this->_use_php_error_log = false;
+			}
+
+			add_action( 'template_redirect', array( &$this, 'load_log_file' ) );
 			add_action( 'pbci_set_logging_enabled', array( __CLASS__, 'set_logging_enabled' ), 10, 1 );
 		}
 
