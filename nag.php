@@ -43,13 +43,13 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		}
 
 		private static function get_saved_notifications() {
-			$messages = get_option( self::$option_name, array() );
+			self::$messages = get_option( self::$option_name, array() );
 
-			if ( ! is_array( $messages ) ) {
-				$messages = array();
+			if ( ! is_array( self::$messages ) ) {
+				self::$messages = array();
 			}
 
-			return $messages;
+			return self::$messages;
 		}
 
 		private static function save_notifications() {
@@ -200,16 +200,19 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 
 			if ( isset( self::$messages[ $message_id ] ) ) {
 				error_log( 'DISMISS NAG: ' . $message_id . ' => ' . self::$messages[ $message_id ] );
-				error_log( var_export( self::$messages ) );
+				error_log( var_export( self::$messages, true ) );
 
 				unset( self::$messages[ $message_id ] );
-				if ( empty( $messages ) ) {
-					update_option( __CLASS__, self::$messages );
-					delete_option( __CLASS__ );
-					$messages = get_option( __CLASS__, array() );
-					error_log( 'DUMP2: ' . var_export( self::$messages ) );
+
+				error_log( 'DUMP1: ' . var_export( self::$messages, true ) );
+
+				if ( empty( self::$messages ) ) {
+					update_option( self::$option_name, false);
+					delete_option( self::$option_name );
+					$messages  = get_option( self::$option_name, array() );
+					error_log( 'DUMP2: ' . var_export( $messages, true ) );
 				} else {
-					update_option( __CLASS__, self::$messages );
+					update_option( self::$option_name, self::$messages );
 				}
 			}
 
