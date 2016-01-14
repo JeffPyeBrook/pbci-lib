@@ -62,7 +62,7 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 				update_option( self::$option_name, self::$messages );
 			}
 
-			return self;
+			return self::$instance;
 		}
 
 
@@ -124,6 +124,10 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		 * @since 3.8.14.1
 		 */
 		static function show_messages() {
+			if ( ! ( is_admin() && current_user_can('administrator') ) ) {
+				return;
+			}
+
 			$messages = self::get_saved_notifications();
 
 			static $script_already_sent = false;

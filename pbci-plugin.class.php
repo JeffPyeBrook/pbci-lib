@@ -383,7 +383,6 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 		// Add settings link on plugin page
 		function settings_links( $links ) {
 			array_unshift( $links, $this->_settings_page_link );
-
 			return $links;
 		}
 
@@ -541,8 +540,8 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 			do_action( 'before_' . $this->_plugin_slug . '_settings' );
 
 			ob_start();
-			$this->collect_settings();
 			$this->settings();
+			$this->collect_settings();
 			$buffer = ob_get_clean();
 
 			if ( ! empty( $buffer ) ) {
@@ -559,7 +558,6 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 			?></div><?php
 			do_action( 'after_' . $this->_plugin_slug . '_settings' );
 
-			$this->about_help_support();
 		}
 
 		function settings() {
@@ -802,7 +800,9 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 					);
 			}
 
-			error_log( 'set unique client key ' . $s . ' turned into ' . $required ['unique_client_key'] );
+			if ( isset( $required ['unique_client_key'] ) && ! empty( $required ['unique_client_key'] ) ) {
+				error_log( 'set unique client key ' . $s . ' turned into ' . $required ['unique_client_key'] );
+			}
 
 			return $required;
 		}
