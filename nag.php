@@ -87,8 +87,9 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		 */
 		static function new_message( $new_messages ) {
 
-			if ( empty ( $new_messages ) )
+			if ( empty ( $new_messages ) ) {
 				return;
+			}
 
 			if ( is_string( $new_messages ) ) {
 				$new_messages = array( $new_messages );
@@ -103,8 +104,8 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 				error_log( 'NEW NAG: ' . $id . ' => ' . $new_message );
 
 				if ( ! isset( self::$messages[ $id ] ) ) {
-					self::$messages[ $id ]     = $new_message;
-					$save_admin_messages = true;
+					self::$messages[ $id ] = $new_message;
+					$save_admin_messages   = true;
 				}
 			}
 
@@ -124,7 +125,7 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		 * @since 3.8.14.1
 		 */
 		static function show_messages() {
-			if ( ! ( is_admin() && current_user_can('administrator') ) ) {
+			if ( ! ( is_admin() && current_user_can( 'administrator' ) ) ) {
 				return;
 			}
 
@@ -136,57 +137,58 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 			// first time though this function and we should add the admin nag script to the page
 			if ( ! $script_already_sent ) {
 				?>
-				<script type="text/javascript">
-					// Admin nag handler
+                <script type="text/javascript">
+                    // Admin nag handler
 
-					// make sure jQuery is defined to avoid inspection warnings
-					if (typeof jQuery == 'undefined') {
-						jQuery = function( foo ) {
-						}
-					}
+                    // make sure jQuery is defined to avoid inspection warnings
+                    if (typeof jQuery == 'undefined') {
+                        jQuery = function (foo) {
+                        }
+                    }
 
-					jQuery(document).ready(function ($) {
-						function pbci_dismiss_admin_msg(id) {
-							$("#pbci-admin-message-" + id).hide();
-							$.ajax({
-								type: "post",
-								dataType: "text",
-								url: "<?php echo admin_url( 'admin-ajax.php', 'relative' );?>",
-								data: {action: "pbci_dismiss_admin_msg", id: id}
-							});
-						}
+                    jQuery(document).ready(function ($) {
+                        function pbci_dismiss_admin_msg(id) {
+                            $("#pbci-admin-message-" + id).hide();
+                            $.ajax({
+                                type: "post",
+                                dataType: "text",
+                                url: "<?php echo admin_url( 'admin-ajax.php', 'relative' );?>",
+                                data: {action: "pbci_dismiss_admin_msg", id: id}
+                            });
+                        }
 
-						$(".pbci-admin-message-dismiss").click(function (event) {
-							pbci_dismiss_admin_msg(event.target.id);
-							return false;
-						});
-					});
-				</script>
+                        $(".pbci-admin-message-dismiss").click(function (event) {
+                            pbci_dismiss_admin_msg(event.target.id);
+                            return false;
+                        });
+                    });
+                </script>
 				<?php
 				$script_already_sent = true;
 			}
 
 			foreach ( self::$messages as $id => $message ) {
-				if ( in_array( $id, $already_displayed ) )
+				if ( in_array( $id, $already_displayed ) ) {
 					continue;
+				}
 
 				$already_displayed[] = $id;
 
 				error_log( 'SHOW NAG: ' . $id . ' => ' . $message );
 
 				?>
-				<div class="updated pbci-admin-message" id="pbci-admin-message-<?php echo esc_attr( $id ); ?>">
-					<div class="message-text">
-						<p>
+                <div class="updated pbci-admin-message" id="pbci-admin-message-<?php echo esc_attr( $id ); ?>">
+                    <div class="message-text">
+                        <p>
 							<?php echo $message; ?>
-						</p>
-					</div>
-					<div class="pbci-admin-message-action" style="width: 100%; text-align: right;">
-						<a class="pbci-admin-message-dismiss"
-						   id="<?php echo esc_attr( $id ); ?>"><?php _e( 'Dismiss' ) ?></a>
-					</div>
-				</div>
-			<?php
+                        </p>
+                    </div>
+                    <div class="pbci-admin-message-action" style="width: 100%; text-align: right;">
+                        <a class="pbci-admin-message-dismiss"
+                           id="<?php echo esc_attr( $id ); ?>"><?php _e( 'Dismiss' ) ?></a>
+                    </div>
+                </div>
+				<?php
 			}
 		}
 
@@ -202,22 +204,15 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 				}
 			}
 
+			self::$messages = get_option( self::$option_name, array() );
+
 			if ( isset( self::$messages[ $message_id ] ) ) {
 				error_log( 'DISMISS NAG: ' . $message_id . ' => ' . self::$messages[ $message_id ] );
 				error_log( var_export( self::$messages, true ) );
-
 				unset( self::$messages[ $message_id ] );
-
-					update_option( self::$option_name, self::$messages );
-					delete_option( self::$option_name );
-					$messages = get_option( self::$option_name, array() );
-					update_option( self::$option_name, false);
-					delete_option( self::$option_name );
-					$messages  = get_option( self::$option_name, array() );
-					error_log( 'DUMP2: ' . var_export( $messages, true ) );
-				} else {
-					update_option( self::$option_name, self::$messages );
-				}
+				update_option( self::$option_name, self::$messages );
+				$messages = get_option( self::$option_name, array() );
+				error_log( 'DUMP2: ' . var_export( $messages, true ) );
 			}
 
 			wp_send_json_success( true );
@@ -234,7 +229,7 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 		$pbci_admin_notifications::new_message( $messages );
 	}
 
-	// If we are showing an admin page we want to show the admin nags
+// If we are showing an admin page we want to show the admin nags
 	if ( is_admin() ) {
 		$pbci_admin_notifications = PBCI_Admin_Notifications::get_instance();
 	}
