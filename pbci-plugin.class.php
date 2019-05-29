@@ -104,38 +104,39 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 			}
 
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$toastr_js  = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.js';
-				$toastr_css = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.css';
+				$toastr_js  = plugin_dir_url( __FILE__ ) . 'external/toastr.js';
+				$toastr_css = plugin_dir_url( __FILE__ ) . 'external/toastr.css';
 			} else {
-				$toastr_js  = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js';
-				$toastr_css = '//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css';
+				$toastr_js  = plugin_dir_url( __FILE__ ) . 'external/toastr.min.js';
+				$toastr_css = plugin_dir_url( __FILE__ ) . 'external/toastr.min.css';
 			}
 
-			wp_register_script( 'toastr', $toastr_js, array( 'jquery' ), false, false );
+			$ver = 'latest';
+			wp_register_script( 'toastr', $toastr_js, array( 'jquery' ), $ver, true );
 			wp_enqueue_script( 'toastr' );
 
-			wp_register_style( 'toastr', $toastr_css );
+			wp_register_style( 'toastr', $toastr_css, false, null );
 			wp_enqueue_style( 'toastr' );
-
-			wp_register_script(
-				'pbci-lib',
-				plugins_url( 'script/pbci-lib.js', __FILE__ ),
-				array( 'jquery', 'toastr' ),
-				false,
-				false
-			);
-
-			wp_localize_script(
-				'pbci-lib',
-				'pbcilib',
-				array(
-					'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
-					'nonce'   => wp_create_nonce( 'pyebrookcompanyinc' ),
-					'debug'   => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				)
-			);
-
-			wp_enqueue_script( 'pbci-lib' );
+//
+//			wp_register_script(
+//				'pbci-lib',
+//				plugins_url( 'script/pbci-lib.js', __FILE__ ),
+//				array( 'jquery', 'toastr' ),
+//				null,
+//				false
+//			);
+//
+//			wp_localize_script(
+//				'pbci-lib',
+//				'pbcilib',
+//				array(
+//					'ajaxurl' => admin_url( 'admin-ajax.php', 'relative' ),
+//					'nonce'   => wp_create_nonce( 'pyebrookcompanyinc' ),
+//					'debug'   => defined( 'WP_DEBUG' ) && WP_DEBUG,
+//				)
+//			);
+//
+//			wp_enqueue_script( 'pbci-lib' );
 
 			wp_enqueue_script( 'heartbeat' );
 
@@ -236,10 +237,10 @@ if ( ! class_exists( 'pbciPluginV3' ) ) {
 				$plugin_name = $this->get_plugin_slug();
 			}
 
-			pbci_admin_nag(
-				'Please register your ' . $plugin_name . ' plugin  '
-				. '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">here</a>.'
-			);
+//			pbci_admin_nag(
+//				'Please register your ' . $plugin_name . ' plugin  '
+//				. '<a href="options-general.php?page=' . $this->_plugin_slug . '_settings' . '">here</a>.'
+//			);
 
 		}
 

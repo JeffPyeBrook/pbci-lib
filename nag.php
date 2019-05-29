@@ -204,9 +204,9 @@ if ( ! class_exists( 'PBCI_Admin_Notifications' ) ) {
 
 				unset( self::$messages[ $message_id ] );
 				if ( empty( $messages ) ) {
-					update_option( __CLASS__, self::$messages );
-					delete_option( __CLASS__ );
-					$messages = get_option( __CLASS__, array() );
+					update_option( self::$option_name, self::$messages );
+					delete_option( self::$option_name );
+					$messages = get_option( self::$option_name, array() );
 					error_log( 'DUMP2: ' . var_export( self::$messages ) );
 				} else {
 					update_option( __CLASS__, self::$messages );
